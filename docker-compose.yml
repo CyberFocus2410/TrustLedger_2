@@ -1,0 +1,53 @@
+version: '3.8'
+
+services:
+  # 1. Hardhat Blockchain Node
+  hardhat:
+    image: node:20-alpine
+    working_dir: /app
+    ports:
+      - "8545:8545"
+    volumes:
+      - ./blockchain:/app
+    command: sh -c "npm install && npx hardhat node --hostname 0.0.0.0"
+
+  # 2. Smart Contract Compiler & Deployer
+  deploy:
+    image: node:20-alpine
+    working_dir: /app
+    environment:
+      - BLOCKCHAIN_RPC_URL=http://hardhat:8545
+    volumes:
+      - ./blockchain:/app
+      - ./backend:/backend
+      - ./frontend:/frontend
+    depends_on:
+      - hardhat
+    # Wait for the Hardhat node to boot up, then deploy the smart contract on-chain
+    command: sh -c "sleep 8 && npx hardhat run scripts/deploy.js --network localhost"
+
+  # 3. FastAPI Python Backend
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    ports:
+      - "8000:8000"
+    environment:
+      - BLOCKCHAIN_RPC_URL=http://hardhat:8545
+      - ISSUER_PRIVATE_KEY=0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80
+    volumes:
+      - ./backend:/app
+    depends_on:
+      deploy:
+        condition: service_completed_successfully
+
+  # 4. React Frontend Served by Nginx
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    ports:
+      - "5173:80"
+    depends_on:
+      - backend
