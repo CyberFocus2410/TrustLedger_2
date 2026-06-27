@@ -35,7 +35,7 @@ const deriveSubScores = (score) => {
   return { volume, failureRate, growth, ticketSize, settlement };
 };
 
-const API_BASE_URL = 'http://localhost:8000';
+const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000';
 const DEFAULT_DEMO_WALLET = '0x71C7656EC7ab88b098defB751B7401B5f6d8976F';
 
 function App() {

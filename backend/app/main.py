@@ -28,10 +28,16 @@ app = Agent(
     version="1.0.0"
 )
 
-# Enable CORS for all origins
+# Enable CORS dynamically from environment variables
+allowed_origins_str = os.getenv("ALLOWED_ORIGINS", "*")
+if allowed_origins_str == "*":
+    origins = ["*"]
+else:
+    origins = [o.strip() for o in allowed_origins_str.split(",") if o.strip()]
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=origins,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],

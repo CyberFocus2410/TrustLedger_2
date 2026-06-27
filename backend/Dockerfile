@@ -1,20 +1,20 @@
-FROM python:3.10-slim
+FROM python:3.11-slim
 
 WORKDIR /app
 
-# Install system dependencies (build-essential is sometimes needed for compiling scikit-learn or web3 dependencies)
+# Install system compile tools
 RUN apt-get update && apt-get install -y --no-install-recommends \
     build-essential \
     && rm -rf /var/lib/apt/lists/*
 
-# Copy requirements and install
+# Copy and install python dependencies
 COPY requirements.txt .
-RUN pip install --no-cache-dir -r requirements.txt httpx
+RUN pip install --no-cache-dir -r requirements.txt
 
-# Copy the rest of the application
+# Copy backend files
 COPY . .
 
 EXPOSE 8000
 
-# Run the FastAPI server using uvicorn
+# Start FastAPI application
 CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000"]
