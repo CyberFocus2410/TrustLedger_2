@@ -1,0 +1,180 @@
+@import "tailwindcss";
+
+@layer base {
+  :root {
+    --bg-dark: #0b0c10;
+    --text-primary: #f3f4f6;
+    --text-muted: #9ca3af;
+    --neon-blue: #00f0ff;
+    --neon-green: #39ff14;
+    --neon-amber: #ffaa00;
+    --neon-rose: #ff0055;
+  }
+
+  body {
+    background-color: #0b0c10 !important;
+    color: #f3f4f6 !important;
+    font-family: 'Outfit', 'Inter', system-ui, sans-serif;
+  }
+
+  /* Force light grey supporting texts globally */
+  .text-gray-400, .text-gray-500, p, span.text-gray-400, span.text-gray-500 {
+    color: #9ca3af !important;
+  }
+
+  /* Make neon accents pop out */
+  .text-blue-400 {
+    color: #00f0ff !important;
+    text-shadow: 0 0 8px rgba(0, 240, 255, 0.2);
+  }
+  .text-emerald-400, .text-emerald-500 {
+    color: #39ff14 !important;
+    text-shadow: 0 0 8px rgba(57, 255, 20, 0.2);
+  }
+  .text-amber-400 {
+    color: #ffaa00 !important;
+    text-shadow: 0 0 8px rgba(255, 170, 0, 0.2);
+  }
+  .text-rose-400 {
+    color: #ff0055 !important;
+    text-shadow: 0 0 8px rgba(255, 0, 85, 0.2);
+  }
+
+  button:focus-visible,
+  a:focus-visible,
+  input:focus-visible,
+  select:focus-visible,
+  [role="button"]:focus-visible,
+  [tabindex]:focus-visible {
+    outline: 4px solid #ffaa00 !important; /* Stark neon yellow focus ring */
+    outline-offset: 2px !important;
+  }
+}
+
+/* Glassmorphism utility classes */
+.glass-panel {
+  background: rgba(18, 20, 29, 0.65);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
+}
+
+.glass-panel-glow {
+  background: rgba(22, 28, 45, 0.7);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(59, 130, 246, 0.2);
+  box-shadow: 0 0 25px 0 rgba(59, 130, 246, 0.15);
+}
+
+.glass-input {
+  background: rgba(30, 41, 59, 0.4);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  color: #fff;
+  transition: all 0.3s ease;
+}
+
+.glass-input:focus {
+  outline: none;
+  border-color: rgba(59, 130, 246, 0.5);
+  box-shadow: 0 0 10px rgba(59, 130, 246, 0.25);
+  background: rgba(30, 41, 59, 0.6);
+}
+
+/* Custom scrollbar for premium feel */
+::-webkit-scrollbar {
+  width: 6px;
+}
+::-webkit-scrollbar-track {
+  background: #0d0e12;
+}
+::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 4px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.25);
+}
+
+/* Animation utilities */
+@keyframes pulseGlow {
+  0%, 100% {
+    opacity: 0.6;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.9;
+    transform: scale(1.02);
+  }
+}
+
+.pulse-glow {
+  animation: pulseGlow 3s infinite ease-in-out;
+}
+
+/* Accessibility High-Contrast Mode Overrides */
+.high-contrast {
+  background-color: #000000 !important;
+  color: #ffffff !important;
+}
+
+/* Eliminate all subtle transparency layers and make all backgrounds pure black */
+.high-contrast,
+.high-contrast *,
+.high-contrast *::before,
+.high-contrast *::after {
+  background-color: #000000 !important;
+  background: #000000 !important;
+  color: #ffffff !important;
+  opacity: 1.0 !important;
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+  box-shadow: none !important;
+  text-shadow: none !important;
+  font-weight: 800 !important; /* Boost font weights to bold */
+}
+
+/* Stark high-visibility borders around every button and card */
+.high-contrast button,
+.high-contrast [role="button"],
+.high-contrast .glass-panel,
+.high-contrast .glass-panel-glow,
+.high-contrast input,
+.high-contrast select,
+.high-contrast a,
+.high-contrast div[tabindex="0"],
+.high-contrast .border,
+.high-contrast .border-t,
+.high-contrast .border-b,
+.high-contrast .border-l,
+.high-contrast .border-r,
+.high-contrast .border-2,
+.high-contrast table,
+.high-contrast th,
+.high-contrast td {
+  border: 2px solid #ffffff !important;
+  border-radius: 0px !important; /* Stark style */
+  margin-top: 4px;
+  margin-bottom: 4px;
+}
+
+/* Stark white coloring for text inside children of interactive elements */
+.high-contrast button *,
+.high-contrast a *,
+.high-contrast div * {
+  color: #ffffff !important;
+  font-weight: 800 !important;
+}
+
+/* Clear 2px focus outline (:focus-visible) across all elements for complete keyboard-tab navigation */
+.high-contrast *:focus-visible,
+.high-contrast button:focus-visible,
+.high-contrast a:focus-visible,
+.high-contrast input:focus-visible,
+.high-contrast select:focus-visible,
+.high-contrast [role="button"]:focus-visible,
+.high-contrast [tabindex]:focus-visible {
+  outline: 2px solid #ffffff !important;
+  outline-offset: 2px !important;
+}

@@ -1,0 +1,16 @@
+{
+  "name": "trustledger-blockchain",
+  "version": "1.0.0",
+  "description": "Smart contracts for TrustLedger credit scoring minting",
+  "main": "index.js",
+  "scripts": {
+    "compile": "hardhat compile",
+    "test": "hardhat test",
+    "node": "hardhat node"
+  },
+  "dependencies": {},
+  "devDependencies": {
+    "@nomicfoundation/hardhat-toolbox": "^5.0.0",
+    "hardhat": "^2.22.5"
+  }
+}
