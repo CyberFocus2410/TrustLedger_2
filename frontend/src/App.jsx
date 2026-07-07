@@ -147,14 +147,18 @@ const parseAndScoreCSVSimulated = (csvText) => {
   
   const headers = lines[0].toLowerCase().replace(/"/g, '').replace(/'/g, '').split(delimiter).map(h => h.trim());
   
-  const dateIdx = headers.findIndex(h => h.includes('date') || h.includes('time') || h.includes('timestamp') || h.includes('dt'));
-  const amountIdx = headers.findIndex(h => h.includes('amount') || h.includes('value') || h.includes('volume') || h.includes('rs') || h.includes('inr') || h.includes('amt') || h.includes('price'));
+  const dateIdx = headers.findIndex(h => h.includes('date') || h.includes('time') || h.includes('timestamp') || h.includes('dt') || h.includes('particulars') || h.includes('narration') || h.includes('description'));
+  const amountIdx = headers.findIndex(h => h.includes('amount') || h.includes('value') || h.includes('volume') || h.includes('rs') || h.includes('inr') || h.includes('amt') || h.includes('price') || h.includes('balance'));
   const statusIdx = headers.findIndex(h => h.includes('status') || h.includes('result') || h.includes('state') || h.includes('resp'));
-  const payerIdx = headers.findIndex(h => h.includes('payer') || h.includes('upi') || h.includes('handle') || h.includes('phone') || h.includes('sender') || h.includes('user') || h.includes('cust'));
+  const payerIdx = headers.findIndex(h => h.includes('payer') || h.includes('upi') || h.includes('handle') || h.includes('phone') || h.includes('sender') || h.includes('user') || h.includes('cust') || h.includes('particulars') || h.includes('narration') || h.includes('description'));
+  const debitIdx = headers.findIndex(h => h.includes('debit') || h.includes('withdrawal') || h.includes('dr') || h.includes('withdr') || h.includes('withdrawn'));
+  const creditIdx = headers.findIndex(h => h.includes('credit') || h.includes('deposit') || h.includes('cr') || h.includes('dep') || h.includes('recieved') || h.includes('received'));
   
-  // Resolve amount index
+  // Resolve amount index or debit/credit column mode
   let finalAmountIdx = amountIdx;
-  if (finalAmountIdx === -1) {
+  let hasSeparateDebitCredit = finalAmountIdx === -1 && (debitIdx !== -1 || creditIdx !== -1);
+  
+  if (finalAmountIdx === -1 && !hasSeparateDebitCredit) {
     // Try to auto-detect numeric column from the first row of data
     const firstRowCols = lines[1].split(delimiter);
     for (let j = 0; j < firstRowCols.length; j++) {
@@ -167,7 +171,7 @@ const parseAndScoreCSVSimulated = (csvText) => {
     }
   }
   
-  if (finalAmountIdx === -1) {
+  if (finalAmountIdx === -1 && !hasSeparateDebitCredit) {
     throw new Error("Statement is missing a recognizable numeric transaction Amount column.");
   }
   
@@ -190,7 +194,7 @@ const parseAndScoreCSVSimulated = (csvText) => {
   
   for (let i = 1; i < lines.length; i++) {
     const cols = lines[i].split(delimiter).map(c => c.trim().replace(/"/g, '').replace(/'/g, ''));
-    if (cols.length <= finalAmountIdx) continue;
+    if (!hasSeparateDebitCredit && cols.length <= finalAmountIdx) continue;
     
     totalTxns++;
     
@@ -201,8 +205,22 @@ const parseAndScoreCSVSimulated = (csvText) => {
     }
     
     // Amount extraction
-    const amountClean = (cols[finalAmountIdx] || '').replace(/[^\d.-]/g, '');
-    const amount = parseFloat(amountClean) || 0;
+    let amount = 0;
+    if (finalAmountIdx !== -1) {
+      const amountClean = (cols[finalAmountIdx] || '').replace(/[^\d.-]/g, '');
+      amount = parseFloat(amountClean) || 0;
+    } else {
+      let crVal = 0;
+      let drVal = 0;
+      if (creditIdx !== -1 && cols[creditIdx]) {
+        crVal = parseFloat((cols[creditIdx] || '').replace(/[^\d.-]/g, '')) || 0;
+      }
+      if (debitIdx !== -1 && cols[debitIdx]) {
+        drVal = parseFloat((cols[debitIdx] || '').replace(/[^\d.-]/g, '')) || 0;
+      }
+      // Use credit primarily (deposits/revenue), fallback to debit if empty
+      amount = crVal > 0 ? crVal : drVal;
+    }
     
     // Payer fallback: default to mock distinct payer
     let payer = `customer_${i}@upi`;

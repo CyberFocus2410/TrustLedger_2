@@ -145,9 +145,17 @@ def parse_pdf_to_csv_bytes(pdf_bytes: bytes) -> bytes:
     parsed_rows = []
     
     # Heuristics & Regex patterns
-    # Match standard date patterns: e.g., YYYY-MM-DD or DD-MM-YYYY or DD-MMM-YYYY (such as 25-Jun-2026)
-    date_pattern = re.compile(r'(\d{4}[-/]\d{2}[-/]\d{2}|\d{2}[-/]\d{2}[-/]\d{4}|\d{2}[-/][A-Za-z]{3,9}[-/]\d{4})')
+    # Match standard date patterns: YYYY-MM-DD, DD-MM-YYYY, DD-MMM-YYYY, DD MMM YYYY, or DD/MM/YY
+    date_pattern = re.compile(
+        r'(\d{4}[-/]\d{2}[-/]\d{2}|'
+        r'\d{2}[-/]\d{2}[-/]\d{4}|'
+        r'\d{2}[-/][A-Za-z]{3,9}[-/]\d{4}|'
+        r'\d{1,2}\s+[A-Za-z]{3,9}\s+\d{2,4}|'
+        r'\d{2}[-/]\d{2}[-/]\d{2})'
+    )
     time_pattern = re.compile(r'(\d{2}:\d{2}:\d{2})')
+    
+    last_date = "2026-07-07"
     
     for line in lines:
         line_clean = line.strip()
@@ -156,11 +164,12 @@ def parse_pdf_to_csv_bytes(pdf_bytes: bytes) -> bytes:
             
         # Search for date match
         date_match = date_pattern.search(line_clean)
-        if not date_match:
-            continue
+        if date_match:
+            date_val = date_match.group(1)
+            last_date = date_val
+        else:
+            date_val = last_date
             
-        date_val = date_match.group(1)
-        
         # Search for time match (optional)
         time_match = time_pattern.search(line_clean)
         time_val = time_match.group(1) if time_match else "00:00:00"
@@ -183,18 +192,18 @@ def parse_pdf_to_csv_bytes(pdf_bytes: bytes) -> bytes:
         tx_id = ""
         for t in tokens:
             t_clean = t.replace('"', '').replace("'", '').strip()
-            if t_clean.startswith('PAYTM') or (t_clean.isalnum() and len(t_clean) >= 10 and t_clean.isupper() and any(c.isdigit() for c in t_clean)):
+            if t_clean.startswith('PAYTM') or t_clean.startswith('TXN') or (t_clean.isalnum() and len(t_clean) >= 10 and t_clean.isupper() and any(c.isdigit() for c in t_clean)):
                 tx_id = t_clean
                 break
         if not tx_id:
             # Generate deterministic transaction ID using line contents hash
-            tx_id = "PAYTMPDF" + hashlib.md5(line_clean.encode()).hexdigest()[:8].upper()
+            tx_id = "TXN" + hashlib.md5(line_clean.encode()).hexdigest()[:8].upper()
             
         # 3. Search for Status
         status = "Success"
         for t in tokens:
             t_lower = t.lower()
-            if "success" in t_lower:
+            if "success" in t_lower or "completed" in t_lower:
                 status = "Success"
                 break
             elif "fail" in t_lower or "reject" in t_lower or "declined" in t_lower or "failure" in t_lower:
@@ -204,12 +213,12 @@ def parse_pdf_to_csv_bytes(pdf_bytes: bytes) -> bytes:
         # 4. Search for Payment Mode
         pay_mode = "UPI"
         line_lower = line_clean.lower()
-        if "wallet" in line_lower:
+        if "wallet" in line_lower or "paytm" in line_lower:
             pay_mode = "Wallet"
-        elif "banking" in line_lower or "net" in line_lower:
+        elif "banking" in line_lower or "net" in line_lower or "imps" in line_lower or "neft" in line_lower:
             pay_mode = "Net Banking"
-        elif "credit" in line_lower or "card" in line_lower:
-            pay_mode = "Credit Card"
+        elif "credit" in line_lower or "card" in line_lower or "debit" in line_lower:
+            pay_mode = "Card"
             
         # 5. Search for Transaction Amount
         amount = 0.0
@@ -225,8 +234,9 @@ def parse_pdf_to_csv_bytes(pdf_bytes: bytes) -> bytes:
             except ValueError:
                 continue
                 
-        # Append formatted row
-        parsed_rows.append(f'"{date_time_str}","{tx_id}","{payer_upi}",{amount},"{status}","{pay_mode}"')
+        # Only append rows that actually contain a valid transaction amount
+        if amount > 0.0:
+            parsed_rows.append(f'"{date_time_str}","{tx_id}","{payer_upi}",{amount},"{status}","{pay_mode}"')
         
     if not parsed_rows:
         raise ValueError("No valid transaction rows found in PDF statement. Please upload a standard transaction statement.")
@@ -259,21 +269,38 @@ def process_scoring(csv_bytes: bytes) -> dict:
                 )
     
     # 1. Map Date column
-    date_aliases = ['date', 'timestamp', 'txn date', 'transaction date', 'value date', 'booking date', 'time']
+    date_aliases = ['date', 'timestamp', 'txn date', 'transaction date', 'value date', 'booking date', 'time', 'transaction_date', 'val dt', 'txn_date', 'date & time']
     for alias in date_aliases:
         if alias in df.columns and 'date' not in df.columns:
             df = df.rename(columns={alias: 'date'})
             break
-
+            
+    # Fuzzy date lookup fallback
+    if 'date' not in df.columns:
+        for col in df.columns:
+            if 'date' in col or 'time' in col:
+                df = df.rename(columns={col: 'date'})
+                break
+                
+    if 'date' not in df.columns:
+        import datetime
+        df['date'] = [datetime.datetime.now() - datetime.timedelta(days=len(df)-idx) for idx in range(len(df))]
+ 
     # 2. Map Transaction ID
-    tx_aliases = ['transaction_id', 'txn_id', 'chq/ref. no.', 'chq/ref no', 'ref. no.', 'ref no', 'reference', 'utr', 'utr number', 'reference number', 'ref_no']
+    tx_aliases = ['transaction_id', 'txn_id', 'chq/ref. no.', 'chq/ref no', 'ref. no.', 'ref no', 'reference', 'utr', 'utr number', 'reference number', 'ref_no', 'tran id', 'txn id', 'transaction reference number', 'ref/cheque no.']
     for alias in tx_aliases:
         if alias in df.columns and 'transaction_id' not in df.columns:
             df = df.rename(columns={alias: 'transaction_id'})
             break
+            
+    if 'transaction_id' not in df.columns:
+        for col in df.columns:
+            if 'ref' in col or 'txn' in col or 'tx' in col or 'utr' in col:
+                df = df.rename(columns={col: 'transaction_id'})
+                break
 
     # 3. Map Amount (either direct amount or withdrawal/deposit)
-    amount_aliases = ['amount', 'amount (inr)', 'value', 'transaction amount']
+    amount_aliases = ['amount', 'amount (inr)', 'value', 'transaction amount', 'rs', 'rs.', 'amount (in rs.)', 'transaction amount (inr)', 'txn amount', 'balance']
     for alias in amount_aliases:
         if alias in df.columns and 'amount' not in df.columns:
             df = df.rename(columns={alias: 'amount'})
@@ -281,8 +308,8 @@ def process_scoring(csv_bytes: bytes) -> dict:
 
     # If 'amount' is still not mapped, search for deposit/withdrawal columns
     if 'amount' not in df.columns:
-        dep_cols = [c for c in df.columns if 'deposit' in c or 'credit' in c or 'cr' in c]
-        wdr_cols = [c for c in df.columns if 'withdrawal' in c or 'debit' in c or 'dr' in c]
+        dep_cols = [c for c in df.columns if any(kw in c for kw in ['deposit', 'credit', 'cr', 'received', 'inward', 'in'])]
+        wdr_cols = [c for c in df.columns if any(kw in c for kw in ['withdrawal', 'debit', 'dr', 'paid', 'outward', 'out'])]
         
         if dep_cols or wdr_cols:
             dep_col = dep_cols[0] if dep_cols else None
