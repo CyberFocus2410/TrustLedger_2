@@ -316,7 +316,7 @@ function App() {
   const [dummyTxHash, setDummyTxHash] = useState('');
   const [isSimulatedScore, setIsSimulatedScore] = useState(false);
   const [apiGatewayInput, setApiGatewayInput] = useState(() => {
-    return localStorage.getItem('TRUSTLEDGER_API_URL') || import.meta.env.VITE_API_URL || 'http://127.0.0.1:8000';
+    return localStorage.getItem('TRUSTLEDGER_API_URL') || import.meta.env.VITE_API_URL || 'https://cyberfocus2410-trustledger-api.hf.space';
   });
   
   // Loan Offers State for Merchant Dashboard
@@ -1029,7 +1029,7 @@ function App() {
                   setApiGatewayInput(val);
                   localStorage.setItem('TRUSTLEDGER_API_URL', val);
                 }}
-                placeholder="http://127.0.0.1:8000"
+                placeholder="https://cyberfocus2410-trustledger-api.hf.space"
                 className={`text-[10.5px] font-mono rounded-xl py-1.5 px-3 w-44 focus:outline-none focus:ring-1 focus:ring-indigo-500 border ${
                   isHighContrast 
                     ? 'bg-black border-white text-white font-black' 

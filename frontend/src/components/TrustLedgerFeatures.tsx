@@ -298,8 +298,12 @@ export const LoanOfferPanel: React.FC<LoanOfferPanelProps> = ({
       setComputedEMI(currentEmi);
     }
 
-    try {
-      const response = await fetch(`${import.meta.env.VITE_API_URL || "http://127.0.0.1:8000"}/api/loan/offer`, {
+  const getApiBaseUrl = () => {
+    return localStorage.getItem('TRUSTLEDGER_API_URL') || import.meta.env.VITE_API_URL || 'https://cyberfocus2410-trustledger-api.hf.space';
+  };
+
+  try {
+    const response = await fetch(`${getApiBaseUrl()}/api/loan/offer`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
