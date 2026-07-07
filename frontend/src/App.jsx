@@ -36,6 +36,225 @@ const deriveSubScores = (score) => {
   return { volume, failureRate, growth, ticketSize, settlement };
 };
 
+const MOCK_PRESETS = {
+  excellent: {
+    merchant_score: 835,
+    credit_score: 835,
+    worthiness_category: "Excellent",
+    credit_limit: 450000,
+    top_factors: [
+      "Stellar Transaction Success Rate (99.2%)",
+      "High Transaction Volume (180,000 INR/mo)",
+      "Highly Consistent Daily Volume"
+    ],
+    audio_summary: {
+      en: "This merchant shows excellent underwriting parameters. Transaction volume is robust with a 99.2% success rate, mapping to a low-risk profile.",
+      hi: "इस व्यापारी का क्रेडिट प्रोफाइल बेहतरीन है। कुल बिक्री मात्रा मजबूत है और सफलता दर 99.2% है।"
+    },
+    ai_analysis: {
+      recommendation: "APPROVED WITH HIGHEST LIMIT",
+      rationale: "Ultra-low volatility, consistent payment daily momentum, and highly diversified buyer network.",
+      fraud_signals: ["None - clean transaction sequence verified"],
+      matched_lender: "SBI Micro-Enterprise Trust",
+      credit_limit_inr: 450000,
+      interest_rate_pct: 8.5
+    },
+    agentfield_audit: {
+      is_clean: true,
+      risk_factor_score: 0.03,
+      justification: "VERDICT: CLEAN. Excellent volume velocity with zero anomalies or transaction collisions detected."
+    },
+    loan_offers: [
+      { id: 1, lender: "SBI Micro-Enterprise Trust", amount: "4,50,000 INR", roi: "8.5% p.a.", tenure: "18 Months", status: "Pre-Approved" },
+      { id: 2, lender: "HDFC Merchant Grow", amount: "3,00,000 INR", roi: "9.2% p.a.", tenure: "12 Months", status: "Pre-Approved" }
+    ]
+  },
+  good: {
+    merchant_score: 720,
+    credit_score: 720,
+    worthiness_category: "Good",
+    credit_limit: 150000,
+    top_factors: [
+      "Moderate Transaction Volume (62,000 INR/mo)",
+      "Standard Business Hour Operations",
+      "Acceptable Failure Rate (2.1%)"
+    ],
+    audio_summary: {
+      en: "This merchant is scored at 720, indicating moderate creditworthiness. Repayment metrics are healthy with standard seasonal sales trends.",
+      hi: "इस व्यापारी का स्कोर 720 है, जो सामान्य रूप से अच्छा है। दैनिक बिक्री स्थिर है।"
+    },
+    ai_analysis: {
+      recommendation: "APPROVED WITH STANDARD RATE",
+      rationale: "Steady transactional performance, moderate customer diversification, and clean fraud logs.",
+      fraud_signals: ["None - low variance in UPI accounts"],
+      matched_lender: "ICICI Business Booster",
+      credit_limit_inr: 150000,
+      interest_rate_pct: 11.2
+    },
+    agentfield_audit: {
+      is_clean: true,
+      risk_factor_score: 0.12,
+      justification: "VERDICT: CLEAN. Transaction spacing checks reveal uniform standard distribution. Normal retail patterns observed."
+    },
+    loan_offers: [
+      { id: 1, lender: "ICICI Business Booster", amount: "1,50,000 INR", roi: "11.2% p.a.", tenure: "12 Months", status: "Eligible" },
+      { id: 2, lender: "Axis Nano-Capital", amount: "1,00,000 INR", roi: "12.0% p.a.", tenure: "6 Months", status: "Eligible" }
+    ]
+  },
+  poor: {
+    merchant_score: 410,
+    credit_score: 410,
+    worthiness_category: "Poor",
+    credit_limit: 15000,
+    top_factors: [
+      "High Transaction Failure Rate / Declines (32%)",
+      "Low Overall Transaction Volume",
+      "Highly Clustered Customer Base (Self-Payment Risk)"
+    ],
+    audio_summary: {
+      en: "This merchant is flagged as high-risk with a rating of 410. Severe payment failure rates and low transaction frequency require close review.",
+      hi: "इस व्यापारी को उच्च जोखिम श्रेणी (410) में रखा गया है। भुगतान विफलता दर अत्यधिक है।"
+    },
+    ai_analysis: {
+      recommendation: "REJECTED / MANUAL AUDIT REQUIRED",
+      rationale: "High decline rate (32%) and narrow customer base suggest circular trading or transaction pooling.",
+      fraud_signals: ["Frequent self-payment loop profiles", "Elevated failure-to-settlement ratios"],
+      matched_lender: "None Matched",
+      credit_limit_inr: 15000,
+      interest_rate_pct: 18.0
+    },
+    agentfield_audit: {
+      is_clean: false,
+      risk_factor_score: 0.78,
+      justification: "ALERT: Elevated transaction decline velocity (32% failure rate). Spike in dispute activity flags high risk."
+    },
+    loan_offers: [
+      { id: 1, lender: "Axis Credit-Bridge (High-Interest)", amount: "15,000 INR", roi: "18.0% p.a.", tenure: "3 Months", status: "Requires Co-signer" }
+    ]
+  }
+};
+
+const parseAndScoreCSVSimulated = (csvText) => {
+  const lines = csvText.split('\n').map(l => l.trim()).filter(l => l.length > 0);
+  if (lines.length <= 1) {
+    throw new Error("Empty or invalid statement file.");
+  }
+  
+  const headers = lines[0].toLowerCase().replace(/"/g, '').replace(/'/g, '').split(',').map(h => h.trim());
+  
+  const dateIdx = headers.findIndex(h => h.includes('date') || h.includes('time'));
+  const amountIdx = headers.findIndex(h => h.includes('amount') || h.includes('value'));
+  const statusIdx = headers.findIndex(h => h.includes('status'));
+  const payerIdx = headers.findIndex(h => h.includes('payer') || h.includes('upi'));
+  
+  if (dateIdx === -1 || amountIdx === -1 || statusIdx === -1 || payerIdx === -1) {
+    throw new Error("CSV is missing required columns: Date, Amount, Status, Payer_UPI.");
+  }
+  
+  // Security scan for formula injections (AgentFieldAI Simulation)
+  for (let i = 1; i < lines.length; i++) {
+    const cols = lines[i].split(',').map(c => c.trim().replace(/"/g, '').replace(/'/g, ''));
+    for (let j = 0; j < cols.length; j++) {
+      const val = cols[j] || '';
+      if (val.startsWith('=') || val.startsWith('+') || val.startsWith('@') || (val.startsWith('-') && isNaN(val))) {
+        throw new Error(`AgentFieldAI Threat Attestation: Malicious formula injection detected in column '${headers[j]}' ('${val.substring(0, 20)}'). Transaction execution blocked.`);
+      }
+    }
+  }
+
+  let totalTxns = 0;
+  let successTxns = 0;
+  let failedTxns = 0;
+  let totalVolume = 0;
+  const uniquePayersSet = new Set();
+  
+  for (let i = 1; i < lines.length; i++) {
+    const cols = lines[i].split(',').map(c => c.trim().replace(/"/g, '').replace(/'/g, ''));
+    if (cols.length < headers.length) continue;
+    
+    totalTxns++;
+    const status = cols[statusIdx].toLowerCase();
+    const amount = parseFloat(cols[amountIdx]) || 0;
+    const payer = cols[payerIdx];
+    
+    if (status.includes('success')) {
+      successTxns++;
+      totalVolume += amount;
+    } else {
+      failedTxns++;
+    }
+    uniquePayersSet.add(payer);
+  }
+  
+  const failureRate = totalTxns > 0 ? (failedTxns / totalTxns) * 100 : 0;
+  const uniquePayersRatio = totalTxns > 0 ? uniquePayersSet.size / totalTxns : 0;
+  
+  let score = 650;
+  if (totalVolume >= 500000) score += 100;
+  else if (totalVolume >= 100000) score += 50;
+  else if (totalVolume < 20000) score -= 100;
+  
+  if (failureRate <= 1) score += 80;
+  else if (failureRate >= 15) score -= 120;
+  else if (failureRate >= 5) score -= 40;
+  
+  if (uniquePayersRatio >= 0.5) score += 70;
+  else if (uniquePayersRatio < 0.15) score -= 90;
+  
+  score = Math.max(300, Math.min(900, Math.round(score)));
+  
+  let worthiness = "Good";
+  let limit = 150000;
+  let rate = 11.2;
+  let matchedLender = "ICICI Business Booster";
+  
+  if (score >= 750) {
+    worthiness = "Excellent";
+    limit = 450000;
+    rate = 8.5;
+    matchedLender = "SBI Micro-Enterprise Trust";
+  } else if (score < 550) {
+    worthiness = "Poor";
+    limit = 15000;
+    rate = 18.0;
+    matchedLender = "Axis Credit-Bridge (High-Interest)";
+  }
+  
+  return {
+    merchant_score: score,
+    credit_score: score,
+    worthiness_category: worthiness,
+    credit_limit: limit,
+    top_factors: [
+      totalVolume >= 100000 ? "Healthy Total Volume Flow" : "Low Overall Transaction Volume",
+      failureRate <= 3 ? "Low Transaction Failure Rate" : "High Transaction Failure Rate / Declines",
+      uniquePayersRatio >= 0.35 ? "Diverse Customer Base" : "Clustered Customer Base (Potential Collusion Risk)"
+    ],
+    audio_summary: {
+      en: `Underwriting simulation complete. Score is ${score} (${worthiness}). Daily transaction logs indicate a total processed volume of ${totalVolume.toLocaleString()} INR.`,
+      hi: `अंडरराइटिंग सिमुलेशन पूरा हुआ। क्रेडिट स्कोर ${score} (${worthiness}) है। कुल बिक्री मात्रा ${totalVolume.toLocaleString()} रुपये है।`
+    },
+    ai_analysis: {
+      recommendation: score >= 550 ? "APPROVED" : "REJECTED / MANUAL AUDIT REQUIRED",
+      rationale: `Evaluated ${totalTxns} total transactions. Volume consistency is stable with a ${failureRate.toFixed(1)}% decline rate.`,
+      fraud_signals: failureRate >= 15 ? ["High failure rate flags operational risk"] : ["None - clean transaction sequence verified"],
+      matched_lender: matchedLender,
+      credit_limit_inr: limit,
+      interest_rate_pct: rate
+    },
+    agentfield_audit: {
+      is_clean: failureRate < 15,
+      risk_factor_score: parseFloat((failureRate / 100).toFixed(2)),
+      justification: `VERDICT: SIMULATED CLEAN. Evaluated client-side. Customer diversity score is ${(uniquePayersRatio * 100).toFixed(0)}%.`
+    },
+    loan_offers: score >= 550 ? [
+      { id: 1, lender: matchedLender, amount: `${limit.toLocaleString()} INR`, roi: `${rate}% p.a.`, tenure: "12 Months", status: "Eligible" }
+    ] : [
+      { id: 1, lender: "Axis Credit-Bridge (High-Interest)", amount: `${limit.toLocaleString()} INR`, roi: "18.0% p.a.", tenure: "3 Months", status: "Requires Co-signer" }
+    ]
+  };
+};
+
 const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://127.0.0.1:8000';
 const DEFAULT_DEMO_WALLET = '0x71C7656EC7ab88b098defB751B7401B5f6d8976F';
 
@@ -57,6 +276,7 @@ function App() {
   const [scoringError, setScoringError] = useState(null);
   const [publishState, setPublishState] = useState('idle'); // 'idle' | 'publishing' | 'locked'
   const [dummyTxHash, setDummyTxHash] = useState('');
+  const [isSimulatedScore, setIsSimulatedScore] = useState(false);
   
   // Loan Offers State for Merchant Dashboard
   const [loanOffers, setLoanOffers] = useState([]);
@@ -193,6 +413,7 @@ function App() {
     setScoringError(null);
     setPublishState('idle');
     setDummyTxHash('');
+    setIsSimulatedScore(false);
 
     const formData = new FormData();
     formData.append('file', file);
@@ -210,11 +431,29 @@ function App() {
 
       const data = await response.json();
       setScoringResult(data);
-    } catch (error) {
-      console.error("Upload failed:", error);
-      setScoringError(error.message);
-    } finally {
+      setIsSimulatedScore(false);
       setUploading(false);
+    } catch (error) {
+      console.warn("API upload failed, attempting client-side statement parsing fallback:", error);
+      
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        try {
+          const csvText = e.target.result;
+          const simResult = parseAndScoreCSVSimulated(csvText);
+          setScoringResult(simResult);
+          setIsSimulatedScore(true);
+        } catch (simErr) {
+          setScoringError(simErr.message);
+        } finally {
+          setUploading(false);
+        }
+      };
+      reader.onerror = () => {
+        setScoringError("Failed to read statement file client-side: " + error.message);
+        setUploading(false);
+      };
+      reader.readAsText(file);
     }
   };
 
@@ -225,6 +464,7 @@ function App() {
     setScoringError(null);
     setPublishState('idle');
     setDummyTxHash('');
+    setIsSimulatedScore(false);
 
     try {
       const response = await fetch(`${API_BASE_URL}/api/score/preset?profile=${profileName}`);
@@ -234,10 +474,19 @@ function App() {
       }
       const data = await response.json();
       setScoringResult(data);
+      setIsSimulatedScore(false);
+      setUploading(false);
     } catch (error) {
-      console.error("Preset load failed:", error);
-      setScoringError(error.message);
-    } finally {
+      console.warn("API preset fetch failed, attempting client-side preset simulation:", error);
+      
+      if (MOCK_PRESETS[profileName]) {
+        setScoringResult(MOCK_PRESETS[profileName]);
+        setIsSimulatedScore(true);
+      } else if (profileName === 'injection') {
+        setScoringError("AgentFieldAI Threat Attestation: Malicious formula injection detected in column 'payer_upi' ('=cmd|' /C calc'!A0'). Transaction execution blocked.");
+      } else {
+        setScoringError("Preset load error: " + error.message);
+      }
       setUploading(false);
     }
   };
@@ -792,6 +1041,32 @@ function App() {
 
       {/* Main Content Area */}
       <main className="flex-grow max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 w-full">
+        {isSimulatedScore && (
+          <div className="mb-6 rounded-2xl p-4 border border-amber-500/20 bg-amber-500/5 text-amber-300 flex items-center justify-between shadow-lg">
+            <div className="flex items-center space-x-3 text-xs leading-relaxed font-semibold">
+              <WifiOff className="h-5 w-5 shrink-0" />
+              <span>
+                <strong>Simulation Mode Active</strong>: Local scoring engine is processing statement data. Blockchain functions will use simulated ledger signatures.
+              </span>
+            </div>
+            <button 
+              onClick={() => {
+                fetch(`${API_BASE_URL}/api/health`)
+                  .then(r => r.json())
+                  .then(() => {
+                    setIsSimulatedScore(false);
+                    alert("Backend server connected successfully! Re-upload or load presets to use production models.");
+                  })
+                  .catch(() => {
+                    alert("Backend server at " + API_BASE_URL + " is still unreachable. Make sure the local python server is running.");
+                  });
+              }}
+              className="text-[10px] uppercase font-bold tracking-wider bg-amber-500/10 hover:bg-amber-500/20 px-3 py-1.5 rounded-lg border border-amber-500/25 transition duration-150 cursor-pointer"
+            >
+              Verify Connection
+            </button>
+          </div>
+        )}
         
         {activeTab === 'merchant' ? (
           /* Merchant Dashboard View */
