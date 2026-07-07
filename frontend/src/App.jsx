@@ -140,24 +140,44 @@ const parseAndScoreCSVSimulated = (csvText) => {
     throw new Error("Empty or invalid statement file.");
   }
   
-  const headers = lines[0].toLowerCase().replace(/"/g, '').replace(/'/g, '').split(',').map(h => h.trim());
+  // Auto-detect delimiter
+  let delimiter = ',';
+  if (lines[0].includes(';')) delimiter = ';';
+  else if (lines[0].includes('\t')) delimiter = '\t';
   
-  const dateIdx = headers.findIndex(h => h.includes('date') || h.includes('time'));
-  const amountIdx = headers.findIndex(h => h.includes('amount') || h.includes('value'));
-  const statusIdx = headers.findIndex(h => h.includes('status'));
-  const payerIdx = headers.findIndex(h => h.includes('payer') || h.includes('upi'));
+  const headers = lines[0].toLowerCase().replace(/"/g, '').replace(/'/g, '').split(delimiter).map(h => h.trim());
   
-  if (dateIdx === -1 || amountIdx === -1 || statusIdx === -1 || payerIdx === -1) {
-    throw new Error("CSV is missing required columns: Date, Amount, Status, Payer_UPI.");
+  const dateIdx = headers.findIndex(h => h.includes('date') || h.includes('time') || h.includes('timestamp') || h.includes('dt'));
+  const amountIdx = headers.findIndex(h => h.includes('amount') || h.includes('value') || h.includes('volume') || h.includes('rs') || h.includes('inr') || h.includes('amt') || h.includes('price'));
+  const statusIdx = headers.findIndex(h => h.includes('status') || h.includes('result') || h.includes('state') || h.includes('resp'));
+  const payerIdx = headers.findIndex(h => h.includes('payer') || h.includes('upi') || h.includes('handle') || h.includes('phone') || h.includes('sender') || h.includes('user') || h.includes('cust'));
+  
+  // Resolve amount index
+  let finalAmountIdx = amountIdx;
+  if (finalAmountIdx === -1) {
+    // Try to auto-detect numeric column from the first row of data
+    const firstRowCols = lines[1].split(delimiter);
+    for (let j = 0; j < firstRowCols.length; j++) {
+      const cleanVal = (firstRowCols[j] || '').replace(/[^\d.-]/g, '');
+      const val = parseFloat(cleanVal);
+      if (!isNaN(val) && val > 0 && val < 5000000) {
+        finalAmountIdx = j;
+        break;
+      }
+    }
+  }
+  
+  if (finalAmountIdx === -1) {
+    throw new Error("Statement is missing a recognizable numeric transaction Amount column.");
   }
   
   // Security scan for formula injections (AgentFieldAI Simulation)
   for (let i = 1; i < lines.length; i++) {
-    const cols = lines[i].split(',').map(c => c.trim().replace(/"/g, '').replace(/'/g, ''));
+    const cols = lines[i].split(delimiter).map(c => c.trim().replace(/"/g, '').replace(/'/g, ''));
     for (let j = 0; j < cols.length; j++) {
       const val = cols[j] || '';
       if (val.startsWith('=') || val.startsWith('+') || val.startsWith('@') || (val.startsWith('-') && isNaN(val))) {
-        throw new Error(`AgentFieldAI Threat Attestation: Malicious formula injection detected in column '${headers[j]}' ('${val.substring(0, 20)}'). Transaction execution blocked.`);
+        throw new Error(`AgentFieldAI Threat Attestation: Malicious formula injection detected in column '${headers[j] || j}' ('${val.substring(0, 20)}'). Transaction execution blocked.`);
       }
     }
   }
@@ -169,19 +189,35 @@ const parseAndScoreCSVSimulated = (csvText) => {
   const uniquePayersSet = new Set();
   
   for (let i = 1; i < lines.length; i++) {
-    const cols = lines[i].split(',').map(c => c.trim().replace(/"/g, '').replace(/'/g, ''));
-    if (cols.length < headers.length) continue;
+    const cols = lines[i].split(delimiter).map(c => c.trim().replace(/"/g, '').replace(/'/g, ''));
+    if (cols.length <= finalAmountIdx) continue;
     
     totalTxns++;
-    const status = cols[statusIdx].toLowerCase();
-    const amount = parseFloat(cols[amountIdx]) || 0;
-    const payer = cols[payerIdx];
     
-    if (status.includes('success')) {
+    // Status fallback: default to success
+    let txnStatus = "success";
+    if (statusIdx !== -1 && cols[statusIdx]) {
+      txnStatus = cols[statusIdx].toLowerCase();
+    }
+    
+    // Amount extraction
+    const amountClean = (cols[finalAmountIdx] || '').replace(/[^\d.-]/g, '');
+    const amount = parseFloat(amountClean) || 0;
+    
+    // Payer fallback: default to mock distinct payer
+    let payer = `customer_${i}@upi`;
+    if (payerIdx !== -1 && cols[payerIdx]) {
+      payer = cols[payerIdx];
+    }
+    
+    if (txnStatus.includes('success') || txnStatus.includes('done') || txnStatus.includes('complete') || txnStatus === 'ok') {
       successTxns++;
       totalVolume += amount;
-    } else {
+    } else if (txnStatus.includes('fail') || txnStatus.includes('reject') || txnStatus.includes('decline') || txnStatus.includes('block')) {
       failedTxns++;
+    } else {
+      successTxns++;
+      totalVolume += amount;
     }
     uniquePayersSet.add(payer);
   }
@@ -1329,6 +1365,14 @@ function App() {
                                            scoringError.includes("vulnerability") || 
                                            scoringError.includes("blocked") || 
                                            scoringError.includes("vulnerable");
+
+                  const isFormatError = scoringError.includes("columns") || 
+                                        scoringError.includes("Format") || 
+                                        scoringError.includes("invalid") || 
+                                        scoringError.includes("Empty") || 
+                                        scoringError.includes("Amount") ||
+                                        scoringError.includes("recognize") ||
+                                        scoringError.includes("numeric");
                   
                   if (isSecurityThreat) {
                     return (
@@ -1406,6 +1450,61 @@ function App() {
                             Clear Threat Alert
                           </button>
                         </div>
+                      </div>
+                    );
+                  } else if (isFormatError) {
+                    return (
+                      /* Premium Parsing/Validation Error Panel */
+                      <div 
+                        tabIndex={0}
+                        className={`rounded-3xl p-8 border relative overflow-hidden text-center flex flex-col items-center justify-center min-h-[400px] shadow-2xl transition-all duration-350 ${
+                          isHighContrast 
+                            ? 'bg-black border-white border-2 text-white font-bold' 
+                            : 'glass-panel border-amber-500/25 bg-[#1a120a]/40 text-slate-200'
+                        }`}
+                      >
+                        {!isHighContrast && (
+                          <div className="absolute right-0 top-0 w-64 h-64 bg-amber-500/5 rounded-full filter blur-3xl pointer-events-none animate-pulse"></div>
+                        )}
+
+                        <div className={`border p-4 rounded-full mb-5 ${
+                          isHighContrast 
+                            ? 'border-white text-white bg-black' 
+                            : 'bg-amber-500/10 border-amber-500/20 text-amber-400'
+                        }`}>
+                          <AlertTriangle className="h-9 w-9 text-current" />
+                        </div>
+
+                        <h3 className={`text-md font-extrabold mb-2 tracking-wide uppercase ${isHighContrast ? 'text-white font-black' : 'text-white'}`}>
+                          Invalid Statement Format
+                        </h3>
+                        <p className={`text-xs max-w-md mb-6 leading-relaxed ${isHighContrast ? 'text-white font-bold' : 'text-slate-400'}`}>
+                          The uploaded document could not be processed. Please check that you uploaded a valid transaction statement containing recognizable headers and row records.
+                        </p>
+
+                        <div className={`border rounded-2xl p-5 w-full max-w-lg text-left space-y-3 mb-6 font-mono text-[10.5px] leading-relaxed ${
+                          isHighContrast ? 'bg-black border-white border-2 text-white' : 'bg-[#0e0c0a] border-amber-500/10'
+                        }`}>
+                          <div className="flex items-start justify-between gap-4">
+                            <span className="text-slate-500 font-bold shrink-0">Error Details:</span>
+                            <span className="text-amber-300">{scoringError}</span>
+                          </div>
+                          <div className="flex items-start justify-between gap-4">
+                            <span className="text-slate-500 font-bold shrink-0">Required Layout:</span>
+                            <span className="text-slate-400">Must contain at least a numeric amount column. Standard fields: Date, Transaction ID, Payer UPI, Amount, Status, Payment Mode.</span>
+                          </div>
+                        </div>
+
+                        <button
+                          onClick={() => setScoringError(null)}
+                          className={`text-xs font-semibold cursor-pointer transition duration-200 focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:outline-none rounded ${
+                            isHighContrast 
+                              ? 'bg-black text-white border-2 border-white hover:bg-gray-900 py-1.5 px-4 rounded-full' 
+                              : 'text-slate-200 hover:text-white bg-slate-900 hover:bg-slate-850 border border-slate-800 px-5 py-2.5 rounded-xl'
+                          }`}
+                        >
+                          Clear Warning & Try Again
+                        </button>
                       </div>
                     );
                   } else {
