@@ -292,7 +292,7 @@ const parseAndScoreCSVSimulated = (csvText) => {
 };
 
 const getApiBaseUrl = () => {
-  return localStorage.getItem('TRUSTLEDGER_API_URL') || import.meta.env.VITE_API_URL || 'http://127.0.0.1:8000';
+  return localStorage.getItem('TRUSTLEDGER_API_URL') || import.meta.env.VITE_API_URL || 'https://cyberfocus2410-trustledger-api.hf.space';
 };
 const DEFAULT_DEMO_WALLET = '0x71C7656EC7ab88b098defB751B7401B5f6d8976F';
 
