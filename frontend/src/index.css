@@ -1,43 +1,39 @@
+@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:ital,wght@0,300;0,400;0,500;0,600;0,700;0,800;1,400&family=JetBrains+Mono:wght@400;500;700&display=swap');
+
 @import "tailwindcss";
 
+@theme {
+  --font-sans: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
+  --font-mono: 'JetBrains Mono', monospace;
+
+  /* Custom Color System */
+  --color-bg-dark: #080a11;
+  --color-bg-light: #f8fafc;
+  --color-card-dark: rgba(15, 20, 35, 0.65);
+  --color-card-light: #ffffff;
+  
+  --color-brand-indigo: #6366f1;
+  --color-brand-indigo-hover: #4f46e5;
+  --color-brand-violet: #8b5cf6;
+  
+  --color-success-emerald: #10b981;
+  --color-warning-amber: #f59e0b;
+  --color-danger-rose: #ef4444;
+  
+  --color-zinc-border: rgba(255, 255, 255, 0.05);
+}
+
 @layer base {
-  :root {
-    --bg-dark: #0b0c10;
-    --text-primary: #f3f4f6;
-    --text-muted: #9ca3af;
-    --neon-blue: #00f0ff;
-    --neon-green: #39ff14;
-    --neon-amber: #ffaa00;
-    --neon-rose: #ff0055;
-  }
-
   body {
-    background-color: #0b0c10 !important;
-    color: #f3f4f6 !important;
-    font-family: 'Outfit', 'Inter', system-ui, sans-serif;
+    background-color: var(--color-bg-dark) !important;
+    color: #f1f5f9 !important;
+    font-family: var(--font-sans);
+    letter-spacing: -0.01em;
   }
 
-  /* Force light grey supporting texts globally */
-  .text-gray-400, .text-gray-500, p, span.text-gray-400, span.text-gray-500 {
-    color: #9ca3af !important;
-  }
-
-  /* Make neon accents pop out */
-  .text-blue-400 {
-    color: #00f0ff !important;
-    text-shadow: 0 0 8px rgba(0, 240, 255, 0.2);
-  }
-  .text-emerald-400, .text-emerald-500 {
-    color: #39ff14 !important;
-    text-shadow: 0 0 8px rgba(57, 255, 20, 0.2);
-  }
-  .text-amber-400 {
-    color: #ffaa00 !important;
-    text-shadow: 0 0 8px rgba(255, 170, 0, 0.2);
-  }
-  .text-rose-400 {
-    color: #ff0055 !important;
-    text-shadow: 0 0 8px rgba(255, 0, 85, 0.2);
+  /* Refined support text colors instead of raw gray-400 forced rules */
+  .text-muted {
+    color: #94a3b8;
   }
 
   button:focus-visible,
@@ -46,71 +42,85 @@
   select:focus-visible,
   [role="button"]:focus-visible,
   [tabindex]:focus-visible {
-    outline: 4px solid #ffaa00 !important; /* Stark neon yellow focus ring */
+    outline: 2px solid var(--color-brand-indigo) !important;
     outline-offset: 2px !important;
   }
 }
 
-/* Glassmorphism utility classes */
+/* Sleek modern glass cards */
 .glass-panel {
-  background: rgba(18, 20, 29, 0.65);
+  background: rgba(13, 17, 30, 0.7);
   backdrop-filter: blur(16px);
   -webkit-backdrop-filter: blur(16px);
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  box-shadow: 0 4px 30px rgba(0, 0, 0, 0.4);
 }
 
 .glass-panel-glow {
-  background: rgba(22, 28, 45, 0.7);
+  background: rgba(16, 24, 48, 0.75);
   backdrop-filter: blur(16px);
   -webkit-backdrop-filter: blur(16px);
-  border: 1px solid rgba(59, 130, 246, 0.2);
-  box-shadow: 0 0 25px 0 rgba(59, 130, 246, 0.15);
+  border: 1px solid rgba(99, 102, 241, 0.25);
+  box-shadow: 0 10px 40px rgba(99, 102, 241, 0.1);
 }
 
 .glass-input {
-  background: rgba(30, 41, 59, 0.4);
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: rgba(9, 12, 22, 0.5);
+  border: 1px solid rgba(255, 255, 255, 0.08);
   color: #fff;
-  transition: all 0.3s ease;
+  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .glass-input:focus {
   outline: none;
-  border-color: rgba(59, 130, 246, 0.5);
-  box-shadow: 0 0 10px rgba(59, 130, 246, 0.25);
-  background: rgba(30, 41, 59, 0.6);
+  border-color: rgba(99, 102, 241, 0.6);
+  box-shadow: 0 0 15px rgba(99, 102, 241, 0.15);
+  background: rgba(9, 12, 22, 0.8);
 }
 
-/* Custom scrollbar for premium feel */
+/* Premium terminal logs style */
+.terminal-window {
+  background: #06080e;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  box-shadow: inset 0 1px 1px rgba(255, 255, 255, 0.05);
+}
+
+.terminal-header {
+  background: rgba(255, 255, 255, 0.02);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+/* Blinking terminal cursor animation */
+@keyframes blink {
+  50% { opacity: 0; }
+}
+.terminal-cursor {
+  animation: blink 1s step-end infinite;
+}
+
+/* Custom premium scrollbar */
 ::-webkit-scrollbar {
-  width: 6px;
+  width: 8px;
+  height: 8px;
 }
 ::-webkit-scrollbar-track {
-  background: #0d0e12;
+  background: #05060b;
 }
 ::-webkit-scrollbar-thumb {
-  background: rgba(255, 255, 255, 0.1);
-  border-radius: 4px;
+  background: rgba(255, 255, 255, 0.08);
+  border-radius: 9999px;
+  border: 2px solid #05060b;
 }
 ::-webkit-scrollbar-thumb:hover {
-  background: rgba(255, 255, 255, 0.25);
+  background: rgba(255, 255, 255, 0.18);
 }
 
-/* Animation utilities */
-@keyframes pulseGlow {
-  0%, 100% {
-    opacity: 0.6;
-    transform: scale(1);
-  }
-  50% {
-    opacity: 0.9;
-    transform: scale(1.02);
-  }
+/* Modern Hover Scale animation */
+.hover-scale {
+  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
 }
-
-.pulse-glow {
-  animation: pulseGlow 3s infinite ease-in-out;
+.hover-scale:hover {
+  transform: translateY(-2px);
 }
 
 /* Accessibility High-Contrast Mode Overrides */
@@ -119,7 +129,6 @@
   color: #ffffff !important;
 }
 
-/* Eliminate all subtle transparency layers and make all backgrounds pure black */
 .high-contrast,
 .high-contrast *,
 .high-contrast *::before,
@@ -132,10 +141,9 @@
   -webkit-backdrop-filter: none !important;
   box-shadow: none !important;
   text-shadow: none !important;
-  font-weight: 800 !important; /* Boost font weights to bold */
+  font-weight: 800 !important;
 }
 
-/* Stark high-visibility borders around every button and card */
 .high-contrast button,
 .high-contrast [role="button"],
 .high-contrast .glass-panel,
@@ -154,12 +162,11 @@
 .high-contrast th,
 .high-contrast td {
   border: 2px solid #ffffff !important;
-  border-radius: 0px !important; /* Stark style */
+  border-radius: 0px !important;
   margin-top: 4px;
   margin-bottom: 4px;
 }
 
-/* Stark white coloring for text inside children of interactive elements */
 .high-contrast button *,
 .high-contrast a *,
 .high-contrast div * {
@@ -167,7 +174,6 @@
   font-weight: 800 !important;
 }
 
-/* Clear 2px focus outline (:focus-visible) across all elements for complete keyboard-tab navigation */
 .high-contrast *:focus-visible,
 .high-contrast button:focus-visible,
 .high-contrast a:focus-visible,

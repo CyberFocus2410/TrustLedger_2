@@ -38,16 +38,16 @@ export const ScoreBreakdown: React.FC<ScoreBreakdownProps> = ({ scores, isHighCo
   // Helper to resolve bar colors based on score value
   const getProgressBarColor = (val: number) => {
     if (isHighContrast) return 'bg-white';
-    if (val >= 750) return 'bg-emerald-500';
-    if (val >= 650) return 'bg-blue-500';
-    if (val >= 550) return 'bg-amber-500';
-    return 'bg-rose-500';
+    if (val >= 750) return 'bg-gradient-to-r from-emerald-600 to-emerald-400';
+    if (val >= 650) return 'bg-gradient-to-r from-indigo-600 to-indigo-400';
+    if (val >= 550) return 'bg-gradient-to-r from-amber-500 to-yellow-400';
+    return 'bg-gradient-to-r from-rose-600 to-rose-400';
   };
 
   const getTextColor = (val: number) => {
     if (isHighContrast) return 'text-white font-black';
     if (val >= 750) return 'text-emerald-400';
-    if (val >= 650) return 'text-blue-400';
+    if (val >= 650) return 'text-indigo-400';
     if (val >= 550) return 'text-amber-400';
     return 'text-rose-400';
   };
@@ -56,27 +56,27 @@ export const ScoreBreakdown: React.FC<ScoreBreakdownProps> = ({ scores, isHighCo
   const getInsightText = (factor: string, val: number) => {
     switch (factor) {
       case 'volume':
-        if (val >= 650) return 'Highly consistent and predictable transaction volume.';
-        if (val >= 550) return 'Moderate volume consistency with minor seasonal variations.';
-        return 'Highly irregular transaction volume patterns observed.';
+        if (val >= 650) return 'Predictable transaction volume consistency.';
+        if (val >= 550) return 'Moderate consistency with seasonal deviations.';
+        return 'Highly irregular transaction volume observed.';
       case 'failureRate': {
         const failRatePct = 100 - ((val - 300) / 600 * 100);
-        if (val >= 650) return `Low failure rate of ${failRatePct.toFixed(1)}% detected.`;
-        if (val >= 550) return `Acceptable failure rate of ${failRatePct.toFixed(1)}%.`;
-        return `Critical failure rate of ${failRatePct.toFixed(1)}% detected.`;
+        if (val >= 650) return `Low payment failure rate: ${failRatePct.toFixed(1)}%.`;
+        if (val >= 550) return `Standard payment failure rate: ${failRatePct.toFixed(1)}%.`;
+        return `Suboptimal payment failure rate: ${failRatePct.toFixed(1)}%.`;
       }
       case 'growth':
-        if (val >= 650) return 'Strong positive MoM revenue growth trend.';
-        if (val >= 550) return 'Stable, flat MoM revenue trajectory.';
-        return 'Negative revenue growth trajectory over the past month.';
+        if (val >= 650) return 'Strong positive MoM revenue expansion.';
+        if (val >= 550) return 'Stable revenue trajectory.';
+        return 'Negative revenue contraction trends.';
       case 'ticketSize':
-        if (val >= 650) return 'Premium average ticket size indicates high value customers.';
-        if (val >= 550) return 'Healthy average ticket size, standard merchant profile.';
-        return 'Micro-transaction average ticket size penalty applied.';
+        if (val >= 650) return 'Premium ticket size suggests high customer value.';
+        if (val >= 550) return 'Standard merchant average ticket size.';
+        return 'Low ticket size threshold penalty applied.';
       case 'settlement':
-        if (val >= 650) return 'Prompt settlement cycle verified (T+0 / T+1).';
-        if (val >= 550) return 'Minor settlement delays detected, typical liquidity locks.';
-        return 'Highly irregular or volatile settlement cycles.';
+        if (val >= 650) return 'Prompt daily settlement cycles verified.';
+        if (val >= 550) return 'Standard settlement cycles with typical liquidity locks.';
+        return 'Highly volatile or delayed settlement periods.';
       default:
         return '';
     }
@@ -96,12 +96,12 @@ export const ScoreBreakdown: React.FC<ScoreBreakdownProps> = ({ scores, isHighCo
       className={`w-full backdrop-blur-md rounded-2xl p-6 border mt-6 text-left ${
         isHighContrast 
           ? 'bg-black border-white border-2 text-white font-bold' 
-          : 'bg-gray-800/80 border-gray-700/50'
+          : 'bg-[#0a0c16]/70 border-slate-900 shadow-md'
       }`}
     >
-      <div className="flex justify-between items-center mb-4">
-        <h4 className={`text-xs font-bold uppercase tracking-widest ${isHighContrast ? 'text-white font-black' : 'text-gray-400'}`}>Weighted Score Breakdown</h4>
-        <span className={`text-sm font-bold ${getTextColor(weightedTotal)}`}>
+      <div className="flex justify-between items-center mb-4 pb-2 border-b border-slate-900/60">
+        <h4 className={`text-[10px] font-bold uppercase tracking-wider ${isHighContrast ? 'text-white font-black' : 'text-slate-400'}`}>Score Composition Breakdown</h4>
+        <span className={`text-xs font-bold ${getTextColor(weightedTotal)}`}>
           Weighted Total: {weightedTotal}/900
         </span>
       </div>
@@ -109,13 +109,13 @@ export const ScoreBreakdown: React.FC<ScoreBreakdownProps> = ({ scores, isHighCo
       <div className="space-y-4">
         {factors.map((f) => (
           <div key={f.key} className="space-y-1.5">
-            <div className={`flex justify-between text-xs font-bold ${isHighContrast ? 'text-white font-black' : 'text-gray-300'}`}>
+            <div className={`flex justify-between text-[11px] font-semibold ${isHighContrast ? 'text-white font-black' : 'text-slate-300'}`}>
               <span>{f.name} ({f.weight}%)</span>
               <span className={getTextColor(f.val)}>{f.val}</span>
             </div>
             
             {/* Progress Bar Container */}
-            <div className={`w-full h-2 rounded-full overflow-hidden ${isHighContrast ? 'bg-black border border-white' : 'bg-gray-900'}`}>
+            <div className={`w-full h-2 rounded-full overflow-hidden ${isHighContrast ? 'bg-black border border-white' : 'bg-slate-950 border border-slate-900/40'}`}>
               <div 
                 className={`h-full rounded-full transition-all duration-1000 ${getProgressBarColor(f.val)}`}
                 style={{ width: `${Math.round(((f.val - 300) / 600) * 100)}%` }}
@@ -123,7 +123,7 @@ export const ScoreBreakdown: React.FC<ScoreBreakdownProps> = ({ scores, isHighCo
             </div>
 
             {/* Subtext Insight */}
-            <p className={`text-[10px] italic ${isHighContrast ? 'text-white font-bold' : 'text-gray-500'}`}>
+            <p className={`text-[9.5px] font-medium leading-normal ${isHighContrast ? 'text-white font-bold' : 'text-slate-500'}`}>
               {getInsightText(f.key, f.val)}
             </p>
           </div>
@@ -150,80 +150,80 @@ export const DemoModeBanner: React.FC<DemoModeBannerProps> = ({ onPresetLoad, is
   return (
     <div 
       tabIndex={0}
-      className={`w-full rounded-xl p-4 mb-4 text-left border ${
+      className={`w-full rounded-2xl p-5 text-left border ${
         isHighContrast 
           ? 'bg-black border-white border-2 text-white' 
-          : 'bg-blue-950/20 border-blue-500/10'
+          : 'bg-[#0d1020]/80 border-slate-900 shadow-md'
       }`}
     >
-      <div className="flex flex-col space-y-3">
+      <div className="flex flex-col space-y-3.5">
         <div className="flex items-center space-x-2">
-          <span className={`text-[9px] font-black tracking-widest uppercase px-2 py-0.5 rounded-full ${
-            isHighContrast ? 'bg-white text-black font-black' : 'bg-blue-500 text-white'
+          <span className={`text-[8px] font-bold tracking-wider uppercase px-2 py-0.5 rounded ${
+            isHighContrast ? 'bg-white text-black font-black' : 'bg-indigo-600 text-white'
           }`}>
-            DEMO MODE ACTIVE
+            DEMO PRESETS
           </span>
-          <span className={`text-xs font-bold ${isHighContrast ? 'text-white' : 'text-blue-400'}`}>
-            Load a sample merchant profile instantly
+          <span className={`text-xs font-semibold ${isHighContrast ? 'text-white' : 'text-slate-300'}`}>
+            Load sample transaction profile
           </span>
         </div>
 
-        <div className="flex flex-wrap gap-2">
+        <div className="grid grid-cols-2 gap-2">
           <button
             onClick={() => onPresetLoad('excellent')}
-            className={`py-1.5 px-4 rounded-full text-xs font-bold transition duration-200 cursor-pointer focus-visible:ring-4 focus-visible:ring-yellow-400 focus-visible:outline-none ${
+            className={`py-2 px-3 rounded-xl text-[10.5px] font-semibold transition duration-200 cursor-pointer focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:outline-none ${
               isHighContrast 
                 ? 'bg-black text-white border-2 border-white hover:bg-gray-900' 
-                : 'bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 hover:bg-emerald-500/20 hover:scale-[1.02]'
+                : 'bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 hover:bg-emerald-500/20 hover:scale-[1.01]'
             }`}
           >
             Excellent Profile
           </button>
           <button
             onClick={() => onPresetLoad('good')}
-            className={`py-1.5 px-4 rounded-full text-xs font-bold transition duration-200 cursor-pointer focus-visible:ring-4 focus-visible:ring-yellow-400 focus-visible:outline-none ${
+            className={`py-2 px-3 rounded-xl text-[10.5px] font-semibold transition duration-200 cursor-pointer focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:outline-none ${
               isHighContrast 
                 ? 'bg-black text-white border-2 border-white hover:bg-gray-900' 
-                : 'bg-amber-500/10 border border-amber-500/30 text-amber-400 hover:bg-amber-500/20 hover:scale-[1.02]'
+                : 'bg-amber-500/10 border border-amber-500/20 text-amber-400 hover:bg-amber-500/20 hover:scale-[1.01]'
             }`}
           >
             Good Profile
           </button>
           <button
             onClick={() => onPresetLoad('poor')}
-            className={`py-1.5 px-4 rounded-full text-xs font-bold transition duration-200 cursor-pointer focus-visible:ring-4 focus-visible:ring-yellow-400 focus-visible:outline-none ${
+            className={`py-2 px-3 rounded-xl text-[10.5px] font-semibold transition duration-200 cursor-pointer focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:outline-none ${
               isHighContrast 
                 ? 'bg-black text-white border-2 border-white hover:bg-gray-900' 
-                : 'bg-rose-500/10 border border-rose-500/30 text-rose-400 hover:bg-rose-500/20 hover:scale-[1.02]'
+                : 'bg-rose-500/10 border border-rose-500/20 text-rose-450 hover:bg-rose-500/20 hover:scale-[1.01]'
             }`}
           >
             Poor Profile
           </button>
           <button
             onClick={() => onPresetLoad('injection')}
-            className={`py-1.5 px-4 rounded-full text-xs font-bold transition duration-200 cursor-pointer focus-visible:ring-4 focus-visible:ring-yellow-400 focus-visible:outline-none flex items-center space-x-1.5 ${
+            className={`py-2 px-3 rounded-xl text-[10.5px] font-semibold transition duration-200 cursor-pointer focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:outline-none flex items-center justify-center space-x-1.5 ${
               isHighContrast 
                 ? 'bg-black text-white border-2 border-white hover:bg-gray-900' 
-                : 'bg-rose-950/20 border border-rose-500/30 text-rose-400 hover:bg-rose-950/40 hover:scale-[1.02]'
+                : 'bg-rose-950/20 border border-rose-500/20 text-rose-400 hover:bg-rose-950/40 hover:scale-[1.01]'
             }`}
           >
             <AlertTriangle className="h-3 w-3 animate-pulse text-rose-400" />
-            <span>CSV Injection Demo</span>
+            <span>CSV Attack Demo</span>
           </button>
         </div>
-        <div className={`text-[10px] font-semibold mt-2 pt-2 border-t ${
-          isHighContrast ? 'border-white text-white' : 'border-blue-500/10 text-gray-400/80'
+        <div className={`text-[10px] font-medium mt-2 pt-2 border-t ${
+          isHighContrast ? 'border-white text-white' : 'border-slate-900 text-slate-500'
         }`}>
-          Interested in more credit scoring protocols?{' '}
+          Credit scoring node protocols.{' '}
           <a 
             href="https://agentfield.ai/?utm_source=luma" 
             target="_blank" 
             rel="noreferrer" 
-            className={`font-bold transition duration-200 focus-visible:ring-4 focus-visible:ring-yellow-400 focus-visible:outline-none ${
-              isHighContrast ? 'text-white underline' : 'text-blue-400 hover:text-blue-300 hover:underline'
+            className={`font-bold transition duration-200 focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:outline-none ${
+              isHighContrast ? 'text-white underline' : 'text-indigo-400 hover:text-indigo-300 hover:underline'
             }`}
           >
-            Explore the AI Agent ecosystem on Agentfield
+            Explore Agentfield API
           </a>
         </div>
       </div>
@@ -333,21 +333,21 @@ export const LoanOfferPanel: React.FC<LoanOfferPanelProps> = ({
       className={`w-full rounded-3xl p-8 mt-6 text-left shadow-2xl relative border ${
         isHighContrast 
           ? 'bg-black border-white border-2 text-white' 
-          : 'bg-gray-800 border-gray-700'
+          : 'bg-[#0a0c16]/85 border-slate-900 shadow-xl'
       }`}
     >
       <div className={`flex items-center space-x-2.5 mb-4 border-b pb-4 ${
-        isHighContrast ? 'border-white' : 'border-gray-700/50'
+        isHighContrast ? 'border-white' : 'border-slate-900/60'
       }`}>
-        <Calculator className={`h-5 w-5 ${isHighContrast ? 'text-white' : 'text-blue-400'}`} />
-        <h3 className="text-md font-bold text-white uppercase tracking-wider">
+        <Calculator className={`h-5 w-5 ${isHighContrast ? 'text-white' : 'text-indigo-400'}`} />
+        <h3 className="text-xs font-bold text-white uppercase tracking-wider">
           Draft Credit Loan Offer
         </h3>
       </div>
 
       {showToast && (
-        <div className={`absolute top-4 right-8 border text-xs font-bold py-2 px-4 rounded-xl shadow-lg flex items-center space-x-2 animate-bounce z-50 ${
-          isHighContrast ? 'bg-black border-white text-white border-2' : 'bg-blue-600 border-blue-400 text-white'
+        <div className={`absolute top-4 right-8 border text-[10px] font-bold py-2 px-4 rounded-xl shadow-lg flex items-center space-x-2 animate-bounce z-50 ${
+          isHighContrast ? 'bg-black border-white text-white border-2' : 'bg-indigo-600 border-indigo-400 text-white'
         }`}>
           <CheckCircle className="h-4 w-4 shrink-0" />
           <span>Offer submitted to blockchain ✓</span>
@@ -358,22 +358,22 @@ export const LoanOfferPanel: React.FC<LoanOfferPanelProps> = ({
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
           {/* Loan Amount Input */}
           <div className="space-y-1.5">
-            <label className={`text-[10px] font-bold uppercase tracking-wider block ${
-              isHighContrast ? 'text-white' : 'text-gray-500'
+            <label className={`text-[9px] font-bold uppercase tracking-wider block ${
+              isHighContrast ? 'text-white' : 'text-slate-500'
             }`}>
               Loan Amount (Principal)
             </label>
             <div className="relative">
-              <span className={`absolute left-3 top-2.5 font-bold text-sm ${isHighContrast ? 'text-white' : 'text-gray-500'}`}>₹</span>
+              <span className={`absolute left-3 top-2.5 font-bold text-xs ${isHighContrast ? 'text-white' : 'text-slate-500'}`}>₹</span>
               <input
                 type="number"
                 placeholder="500000"
                 value={loanAmount}
                 onChange={(e) => setLoanAmount(e.target.value)}
-                className={`w-full rounded-xl py-2 pl-7 pr-3 text-sm focus:outline-none focus-visible:ring-4 focus-visible:ring-yellow-400 ${
+                className={`w-full rounded-xl py-2.5 pl-7 pr-3 text-xs focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 ${
                   isHighContrast 
                     ? 'bg-black border-2 border-white text-white focus:border-white' 
-                    : 'bg-gray-900 border border-gray-700 text-white focus:border-blue-500'
+                    : 'bg-[#060811] border border-slate-900 text-white focus:border-indigo-500'
                 }`}
               />
             </div>
@@ -381,8 +381,8 @@ export const LoanOfferPanel: React.FC<LoanOfferPanelProps> = ({
 
           {/* Interest Rate Input */}
           <div className="space-y-1.5">
-            <label className={`text-[10px] font-bold uppercase tracking-wider block ${
-              isHighContrast ? 'text-white' : 'text-gray-500'
+            <label className={`text-[9px] font-bold uppercase tracking-wider block ${
+              isHighContrast ? 'text-white' : 'text-slate-500'
             }`}>
               Interest Rate (p.a.)
             </label>
@@ -393,30 +393,30 @@ export const LoanOfferPanel: React.FC<LoanOfferPanelProps> = ({
                 placeholder="12.5"
                 value={interestRate}
                 onChange={(e) => setInterestRate(e.target.value)}
-                className={`w-full rounded-xl py-2 pl-3 pr-8 text-sm focus:outline-none focus-visible:ring-4 focus-visible:ring-yellow-400 ${
+                className={`w-full rounded-xl py-2.5 pl-3 pr-8 text-xs focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 ${
                   isHighContrast 
                     ? 'bg-black border-2 border-white text-white focus:border-white' 
-                    : 'bg-gray-900 border border-gray-700 text-white focus:border-blue-500'
+                    : 'bg-[#060811] border border-slate-900 text-white focus:border-indigo-500'
                 }`}
               />
-              <span className={`absolute right-3 top-2.5 font-bold text-sm ${isHighContrast ? 'text-white' : 'text-gray-500'}`}>%</span>
+              <span className={`absolute right-3 top-2.5 font-bold text-xs ${isHighContrast ? 'text-white' : 'text-slate-500'}`}>%</span>
             </div>
           </div>
 
           {/* Tenure Select */}
           <div className="space-y-1.5">
-            <label className={`text-[10px] font-bold uppercase tracking-wider block ${
-              isHighContrast ? 'text-white' : 'text-gray-500'
+            <label className={`text-[9px] font-bold uppercase tracking-wider block ${
+              isHighContrast ? 'text-white' : 'text-slate-500'
             }`}>
               Tenure Duration
             </label>
             <select
               value={tenure}
               onChange={(e) => setTenure(parseInt(e.target.value))}
-              className={`w-full rounded-xl py-2 px-3 text-sm focus:outline-none cursor-pointer focus-visible:ring-4 focus-visible:ring-yellow-400 ${
+              className={`w-full rounded-xl py-2.5 px-3 text-xs focus:outline-none cursor-pointer focus-visible:ring-2 focus-visible:ring-indigo-500 ${
                 isHighContrast 
                   ? 'bg-black border-2 border-white text-white focus:border-white' 
-                  : 'bg-gray-900 border border-gray-700 text-white focus:border-blue-500'
+                  : 'bg-[#060811] border border-slate-900 text-slate-200 focus:border-indigo-500'
               }`}
             >
               <option value={3}>3 months</option>
@@ -432,23 +432,23 @@ export const LoanOfferPanel: React.FC<LoanOfferPanelProps> = ({
           <button
             type="button"
             onClick={handleCalculateEMI}
-            className={`w-full sm:w-auto text-xs font-bold py-2.5 px-6 rounded-xl transition duration-200 cursor-pointer focus-visible:ring-4 focus-visible:ring-yellow-400 focus-visible:outline-none ${
+            className={`w-full sm:w-auto text-xs font-bold py-2.5 px-6 rounded-xl transition duration-200 cursor-pointer focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:outline-none hover-scale ${
               isHighContrast 
                 ? 'bg-black border-2 border-white text-white hover:bg-gray-900' 
-                : 'bg-gray-900 hover:bg-gray-700/60 border border-gray-700 text-gray-200'
+                : 'bg-[#060811] border border-slate-900 text-slate-300 hover:bg-[#0c0e18] hover:text-white'
             }`}
           >
             Calculate EMI
           </button>
 
           {computedEMI !== null && (
-            <div className={`flex-grow flex items-center space-x-3 w-full border rounded-xl py-2 px-4 ${
-              isHighContrast ? 'bg-black border-white border-2' : 'bg-gray-900/60 border-gray-700/30'
+            <div className={`flex-grow flex items-center space-x-3 w-full border rounded-xl py-2.5 px-4 ${
+              isHighContrast ? 'bg-black border-white border-2' : 'bg-[#060811]/60 border-slate-900/60 shadow-inner'
             }`}>
-              <span className={`text-[10px] font-bold uppercase tracking-wider ${isHighContrast ? 'text-white' : 'text-gray-500'}`}>
+              <span className={`text-[9px] font-bold uppercase tracking-wider ${isHighContrast ? 'text-white' : 'text-slate-500'}`}>
                 Monthly EMI Payback:
               </span>
-              <span className={`text-md font-extrabold ${isHighContrast ? 'text-white font-black' : 'text-emerald-400'}`}>
+              <span className={`text-xs font-extrabold ${isHighContrast ? 'text-white font-black' : 'text-emerald-400'}`}>
                 ₹{computedEMI.toLocaleString('en-IN')} / month
               </span>
             </div>
@@ -458,10 +458,10 @@ export const LoanOfferPanel: React.FC<LoanOfferPanelProps> = ({
         {/* Submit Offer CTA */}
         <button
           type="submit"
-          className={`w-full font-bold text-xs py-3.5 rounded-xl transition duration-200 hover:scale-[1.01] shadow-lg flex items-center justify-center space-x-2 cursor-pointer focus-visible:ring-4 focus-visible:ring-yellow-400 focus-visible:outline-none ${
+          className={`w-full font-bold text-xs py-3.5 rounded-xl transition duration-200 hover-scale shadow-md flex items-center justify-center space-x-2 cursor-pointer focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:outline-none ${
             isHighContrast 
               ? 'bg-white text-black font-black border-2 border-black hover:bg-gray-100' 
-              : 'bg-blue-600 hover:bg-blue-500 text-white shadow-blue-500/10'
+              : 'bg-indigo-600 hover:bg-indigo-500 text-white shadow-indigo-600/10 hover:shadow-indigo-600/20'
           }`}
         >
           <Send className="h-4 w-4" />
@@ -496,13 +496,13 @@ export const RiskFlags: React.FC<RiskFlagsProps> = ({
 
   // Derive risk signals from score parameters
   if (growth < 50) {
-    flags.push("Flat or declining revenue trend detected");
+    flags.push("Flat or declining revenue expansion trend");
   }
   if (volumeConsistency < 60) {
-    flags.push("Irregular transaction volume pattern");
+    flags.push("Irregular transaction volume patterns");
   }
   if (failureRate > 30) {
-    flags.push("Above-average payment failure rate");
+    flags.push("Above-average payment failure threshold");
   }
 
   return (
@@ -511,13 +511,13 @@ export const RiskFlags: React.FC<RiskFlagsProps> = ({
       className={`w-full rounded-2xl p-6 border mt-6 text-left ${
         isHighContrast 
           ? 'bg-black border-white border-2 text-white' 
-          : 'bg-gray-800/60 border-gray-700/50'
+          : 'bg-[#0a0c16]/70 border-slate-900 shadow-md'
       }`}
     >
-      <span className={`text-xs font-bold uppercase tracking-widest block mb-4 ${
+      <span className={`text-[10px] font-bold uppercase tracking-wider block mb-4 ${
         isHighContrast ? 'text-white font-black' : 'text-amber-500'
       }`}>
-        Risk Signals
+        Risk Evaluation Signals
       </span>
 
       {flags.length > 0 ? (
@@ -525,25 +525,25 @@ export const RiskFlags: React.FC<RiskFlagsProps> = ({
           {flags.map((flag, index) => (
             <div
               key={index}
-              className={`flex items-start space-x-3 p-3 rounded-xl border-l-4 text-xs font-bold ${
+              className={`flex items-start space-x-3 p-3.5 rounded-xl border text-xs font-semibold ${
                 isHighContrast 
-                  ? 'border border-white bg-black text-white border-l-white font-black' 
-                  : 'border-amber-500/20 bg-amber-500/5 text-amber-400 border-l-amber-500'
+                  ? 'border border-white bg-black text-white font-black' 
+                  : 'border-amber-500/10 bg-amber-500/5 text-amber-400'
               }`}
             >
-              <AlertTriangle className={`h-4 w-4 shrink-0 mt-0.5 ${isHighContrast ? 'text-white' : 'text-amber-500'}`} />
-              <span className={`leading-relaxed ${isHighContrast ? 'text-white' : 'text-gray-300'}`}>{flag}</span>
+              <AlertTriangle className={`h-4 w-4 shrink-0 mt-0.5 ${isHighContrast ? 'text-white' : 'text-amber-400'}`} />
+              <span className={`leading-relaxed ${isHighContrast ? 'text-white' : 'text-slate-300'}`}>{flag}</span>
             </div>
           ))}
         </div>
       ) : (
-        <div className={`flex items-start space-x-3 p-3 rounded-xl border-l-4 text-xs font-bold ${
+        <div className={`flex items-start space-x-3 p-3.5 rounded-xl border text-xs font-semibold ${
           isHighContrast 
-            ? 'border border-white bg-black text-white border-l-white font-black' 
-            : 'border-emerald-500/20 bg-emerald-500/5 text-emerald-400 border-l-emerald-500'
+            ? 'border border-white bg-black text-white font-black' 
+            : 'border-emerald-500/10 bg-emerald-500/5 text-emerald-400'
         }`}>
-          <CheckCircle className={`h-4 w-4 shrink-0 mt-0.5 ${isHighContrast ? 'text-white' : 'text-emerald-500'}`} />
-          <span className="leading-relaxed">No significant risk signals detected</span>
+          <CheckCircle className={`h-4 w-4 shrink-0 mt-0.5 ${isHighContrast ? 'text-white' : 'text-emerald-400'}`} />
+          <span className="leading-relaxed">No critical operational risk flags detected</span>
         </div>
       )}
     </div>

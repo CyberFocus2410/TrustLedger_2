@@ -6,6 +6,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from typing import List, Optional
 from pydantic import BaseModel, Field
 from agentfield import Agent, AIConfig
+import joblib
 
 import sys
 import os
@@ -17,6 +18,20 @@ from blockchain import (
     update_loan_offer_status, 
     get_merchant_offers
 )
+
+# Load trained Machine Learning models
+MODELS_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "models")
+try:
+    credit_score_model = joblib.load(os.path.join(MODELS_DIR, "credit_score_model.joblib"))
+    credit_limit_model = joblib.load(os.path.join(MODELS_DIR, "credit_limit_model.joblib"))
+    risk_model = joblib.load(os.path.join(MODELS_DIR, "risk_model.joblib"))
+    feature_columns = joblib.load(os.path.join(MODELS_DIR, "feature_columns.joblib"))
+    dataset_means = joblib.load(os.path.join(MODELS_DIR, "dataset_means.joblib"))
+    has_models = True
+    print("Machine Learning models successfully loaded for credit scoring.")
+except Exception as e:
+    has_models = False
+    print(f"Machine learning models could not be loaded: {str(e)}. Falling back to rule-based engine.")
 
 # In-memory storage for loan offers when blockchain is not connected or accessible
 MOCK_LOAN_OFFERS = []
@@ -32,13 +47,15 @@ app = Agent(
 allowed_origins_str = os.getenv("ALLOWED_ORIGINS", "*")
 if allowed_origins_str == "*":
     origins = ["*"]
+    allow_creds = False
 else:
     origins = [o.strip() for o in allowed_origins_str.split(",") if o.strip()]
+    allow_creds = True
 
 app.add_middleware(
     CORSMiddleware,
     allow_origins=origins,
-    allow_credentials=True,
+    allow_credentials=allow_creds,
     allow_methods=["*"],
     allow_headers=["*"],
 )
@@ -251,18 +268,14 @@ def process_scoring(csv_bytes: bytes) -> dict:
     failed_txns = total_txns - success_txns
 
     # Calculate metrics
-    # 1. Total transaction volume
     total_volume = float(success_df['amount'].sum())
-
-    # 2. Average transaction size
     avg_txn_size = float(success_df['amount'].mean()) if success_txns > 0 else 0.0
-
-    # 3. Failure rate
+    std_txn_size = float(success_df['amount'].std()) if success_txns > 1 else 0.0
     failure_rate = (failed_txns / total_txns) * 100 if total_txns > 0 else 0.0
+    success_rate = (success_txns / total_txns) * 100 if total_txns > 0 else 0.0
 
-    # 4. Growth rate (splitting chronologically into two halves)
+    # Growth rate
     df_sorted = df.sort_values('date')
-
     if len(df_sorted) > 1:
         midpoint = len(df_sorted) // 2
         first_half = df_sorted.iloc[:midpoint]
@@ -278,108 +291,260 @@ def process_scoring(csv_bytes: bytes) -> dict:
     else:
         growth_rate = 0.0
 
-    # Scoring Engine (0-100 scale)
-    base_score = 50.0
-    score_adjustments = []
-
-    # A. Failure Rate Impact
-    if failure_rate <= 0.6:
-        fail_adj = 20.0
-        fail_factor = "Low Failure Rate"
-    elif failure_rate <= 3.0:
-        fail_adj = 10.0
-        fail_factor = "Acceptable Failure Rate"
-    elif failure_rate >= 15.0:
-        fail_adj = -20.0
-        fail_factor = "High Failure Rate"
+    # Days span
+    min_date = df['date'].min()
+    max_date = df['date'].max()
+    if pd.notna(min_date) and pd.notna(max_date):
+        days_span = max(1, (max_date - min_date).days)
     else:
-        fail_adj = -5.0
-        fail_factor = "Moderate Failure Rate"
-    score_adjustments.append((fail_factor, fail_adj))
+        days_span = 30
+    txn_frequency = total_txns / days_span
 
-    # B. Average Transaction Size Impact
-    if avg_txn_size >= 1000.0:
-        size_adj = 15.0
-        size_factor = "Premium Average Ticket Size"
-    elif avg_txn_size >= 200.0:
-        size_adj = 5.0
-        size_factor = "Healthy Average Ticket Size"
-    elif avg_txn_size < 50.0:
-        size_adj = -15.0
-        size_factor = "Micro-transaction Volume Penalty"
+    # Unique payers
+    unique_payers = df['payer_upi'].nunique()
+    unique_payers_ratio = unique_payers / total_txns if total_txns > 0 else 0.0
+
+    # Peak hour ratio
+    df['hour'] = df['date'].dt.hour
+    peak_hour_txns = len(df[(df['hour'] >= 23) | (df['hour'] <= 4)])
+    peak_hour_ratio = peak_hour_txns / total_txns if total_txns > 0 else 0.0
+
+    # Consistency
+    daily_vol = success_df.groupby(success_df['date'].dt.date)['amount'].sum()
+    consistency = float(daily_vol.std() / daily_vol.mean()) if len(daily_vol) > 1 and daily_vol.mean() > 0 else 1.0
+
+    # Metrics summary dictionary
+    metrics_summary = {
+        "total_transactions": int(total_txns),
+        "successful_transactions": int(success_txns),
+        "failed_transactions": int(failed_txns),
+        "total_volume": float(total_volume),
+        "avg_txn_size": float(avg_txn_size),
+        "failure_rate": float(failure_rate),
+        "growth_rate_pct": float(growth_rate * 100)
+    }
+
+    # Execute ML Inference if models are loaded
+    if has_models:
+        # Prepare input vector
+        features = {
+            "total_transactions": total_txns,
+            "success_rate": success_rate,
+            "total_volume": total_volume,
+            "avg_txn_size": avg_txn_size,
+            "std_txn_size": std_txn_size,
+            "growth_rate": growth_rate,
+            "txn_frequency_per_day": txn_frequency,
+            "unique_payers_ratio": unique_payers_ratio,
+            "peak_hour_ratio": peak_hour_ratio,
+            "consistency_score": consistency
+        }
+        
+        X_in = pd.DataFrame([features])[feature_columns]
+        
+        # Predict using Random Forest Regressors
+        final_score = int(np.clip(round(credit_score_model.predict(X_in)[0]), 300, 900))
+        calculated_limit = int(np.clip(round(credit_limit_model.predict(X_in)[0]), 0, 1000000))
+        calculated_limit = int(np.round(calculated_limit / 5000.0) * 5000) # round to nearest 5K
+        
+        predicted_risk = float(np.clip(risk_model.predict(X_in)[0], 0.0, 1.0))
+        
+        # Compute Pseudo-SHAP contributions relative to dataset average
+        contributions = {}
+        
+        # 1. Success rate impact
+        diff_success = features["success_rate"] - dataset_means["success_rate"]
+        contributions["Success Rate"] = {
+            "val": diff_success * 2.0,
+            "factor": "Stellar Transaction Success Rate" if diff_success >= 0 else "High Transaction Failure Rate / Declines"
+        }
+        
+        # 2. Volume impact
+        diff_vol = np.log1p(features["total_volume"]) - np.log1p(dataset_means["total_volume"])
+        contributions["Volume"] = {
+            "val": diff_vol * 4.0,
+            "factor": "High Transaction Volume" if diff_vol >= 0 else "Low Overall Transaction Volume"
+        }
+        
+        # 3. Average ticket size impact
+        diff_size = features["avg_txn_size"] - dataset_means["avg_txn_size"]
+        contributions["Ticket Size"] = {
+            "val": diff_size / 40.0,
+            "factor": "Premium Average Ticket Size" if diff_size >= 0 else "Micro-transaction Volume Profile"
+        }
+        
+        # 4. Growth rate impact
+        diff_growth = features["growth_rate"] - dataset_means["growth_rate"]
+        contributions["Growth"] = {
+            "val": diff_growth * 15.0,
+            "factor": "Strong Month-on-Month Growth" if diff_growth >= 0 else "Declining Merchant Revenue Growth"
+        }
+        
+        # 5. Unique payers ratio impact
+        diff_payers = features["unique_payers_ratio"] - dataset_means["unique_payers_ratio"]
+        contributions["Unique Payers"] = {
+            "val": diff_payers * 25.0,
+            "factor": "Diverse Customer Base" if diff_payers >= 0 else "Highly Clustered Customer Base (Self-Payment Risk)"
+        }
+        
+        # 6. Peak hour ratio impact
+        diff_peak = features["peak_hour_ratio"] - dataset_means["peak_hour_ratio"]
+        contributions["Peak Hours"] = {
+            "val": -diff_peak * 40.0,
+            "factor": "Standard Business Hour Operations" if diff_peak <= 0 else "Unusual Midnight Transaction Velocity Spikes"
+        }
+        
+        # 7. Consistency impact
+        diff_const = dataset_means["consistency_score"] - features["consistency_score"]
+        contributions["Consistency"] = {
+            "val": diff_const * 10.0,
+            "factor": "Highly Consistent Daily Volume" if diff_const >= 0 else "Irregular/Volatile Daily Sales Volume"
+        }
+        
+        # Sort contributions by absolute value to get top 3 factors
+        sorted_contribs = sorted(contributions.values(), key=lambda x: abs(x["val"]), reverse=True)
+        top_3_factors = [c["factor"] for c in sorted_contribs[:3]]
+        
+        # Set agentfield fallback audit score from ML predictions
+        is_clean = predicted_risk >= 0.5
+        risk_score_disp = float(np.round(1.0 - predicted_risk, 2))
+        
+        if not is_clean:
+            justification = f"ALERT: Elevated risk verdict ({risk_score_disp*100:.0f}%) detected in statement metrics. Payer UPI consolidation or unusual night-time traffic patterns flag potential security review."
+        elif risk_score_disp > 0.15:
+            justification = f"VERDICT: CLEAN (Moderate Risk {risk_score_disp*100:.0f}%). Normal transactional spacing checks passed, with minor velocity fluctuations."
+        else:
+            justification = f"VERDICT: CLEAN. Excellent distribution of customer UPI entities and healthy business hour transaction velocity (risk score {risk_score_disp*100:.0f}%)."
+            
+        ml_audit_verdict = {
+            "is_clean": is_clean,
+            "risk_factor_score": risk_score_disp,
+            "justification": justification
+        }
     else:
-        size_adj = 0.0
-        size_factor = "Standard Average Ticket Size"
-    score_adjustments.append((size_factor, size_adj))
+        # Fallback to rule-based scoring engine
+        base_score = 50.0
+        score_adjustments = []
 
-    # C. Growth Rate Impact
-    if growth_rate > 0.3:
-        growth_adj = 10.0
-        growth_factor = "Skyrocketing Month-on-Month Growth"
-    elif growth_rate >= -0.05:
-        growth_adj = 0.0
-        growth_factor = "Stable Month-on-Month Growth"
-    elif growth_rate < -0.2:
-        growth_adj = -15.0
-        growth_factor = "Declining Merchant Revenue Growth"
-    else:
-        growth_adj = -5.0
-        growth_factor = "Flat Growth Trend"
-    score_adjustments.append((growth_factor, growth_adj))
+        # A. Failure Rate Impact
+        if failure_rate <= 0.6:
+            fail_adj = 20.0
+            fail_factor = "Low Failure Rate"
+        elif failure_rate <= 3.0:
+            fail_adj = 10.0
+            fail_factor = "Acceptable Failure Rate"
+        elif failure_rate >= 15.0:
+            fail_adj = -20.0
+            fail_factor = "High Failure Rate"
+        else:
+            fail_adj = -5.0
+            fail_factor = "Moderate Failure Rate"
+        score_adjustments.append((fail_factor, fail_adj))
 
-    # D. Volume Impact
-    if total_volume > 400000.0:
-        vol_adj = 10.0
-        vol_factor = "High Transaction Volume"
-    elif total_volume >= 50000.0:
-        vol_adj = 5.0
-        vol_factor = "Consistent Transaction Volume"
-    elif total_volume < 5000.0:
-        vol_adj = -10.0
-        vol_factor = "Low Transaction Volume"
-    else:
-        vol_adj = 0.0
-        vol_factor = "Moderate Transaction Volume"
-    score_adjustments.append((vol_factor, vol_adj))
+        # B. Average Transaction Size Impact
+        if avg_txn_size >= 1000.0:
+            size_adj = 15.0
+            size_factor = "Premium Average Ticket Size"
+        elif avg_txn_size >= 200.0:
+            size_adj = 5.0
+            size_factor = "Healthy Average Ticket Size"
+        elif avg_txn_size < 50.0:
+            size_adj = -15.0
+            size_factor = "Micro-transaction Volume Penalty"
+        else:
+            size_adj = 0.0
+            size_factor = "Standard Average Ticket Size"
+        score_adjustments.append((size_factor, size_adj))
 
-    # Calculate final score
-    total_adj = sum(adj for _, adj in score_adjustments)
-    final_score_0_100 = np.clip(base_score + total_adj, 0, 100)
-    final_score = int(300 + final_score_0_100 * 6)
+        # C. Growth Rate Impact
+        if growth_rate > 0.3:
+            growth_adj = 10.0
+            growth_factor = "Skyrocketing Month-on-Month Growth"
+        elif growth_rate >= -0.05:
+            growth_adj = 0.0
+            growth_factor = "Stable Month-on-Month Growth"
+        elif growth_rate < -0.2:
+            growth_adj = -15.0
+            growth_factor = "Declining Merchant Revenue Growth"
+        else:
+            growth_adj = -5.0
+            growth_factor = "Flat Growth Trend"
+        score_adjustments.append((growth_factor, growth_adj))
 
-    # Sort adjustments by absolute magnitude to get top 3 factors mimicking SHAP
-    sorted_adjustments = sorted(score_adjustments, key=lambda x: abs(x[1]), reverse=True)
-    top_3_factors = [factor for factor, _ in sorted_adjustments[:3]]
+        # D. Volume Impact
+        if total_volume > 400000.0:
+            vol_adj = 10.0
+            vol_factor = "High Transaction Volume"
+        elif total_volume >= 50000.0:
+            vol_adj = 5.0
+            vol_factor = "Consistent Transaction Volume"
+        elif total_volume < 5000.0:
+            vol_adj = -10.0
+            vol_factor = "Low Transaction Volume"
+        else:
+            vol_adj = 0.0
+            vol_factor = "Moderate Transaction Volume"
+        score_adjustments.append((vol_factor, vol_adj))
 
-    # Ensure 3 elements
+        # Calculate final score
+        total_adj = sum(adj for _, adj in score_adjustments)
+        final_score_0_100 = np.clip(base_score + total_adj, 0, 100)
+        final_score = int(300 + final_score_0_100 * 6)
+
+        sorted_adjustments = sorted(score_adjustments, key=lambda x: abs(x[1]), reverse=True)
+        top_3_factors = [factor for factor, _ in sorted_adjustments[:3]]
+
+        # Limit fallback
+        normalized_score = max(0.0, min(1.0, (final_score - 300.0) / 600.0))
+        base_limit = 500000.0 * normalized_score
+        volume_factor_limit = min(1.0, (total_volume / days_span * 30.0) / 100000.0) if total_volume > 0 else 0.0
+        calculated_limit = int(base_limit * volume_factor_limit)
+        
+        ml_audit_verdict = {
+            "is_clean": True,
+            "risk_factor_score": 0.0,
+            "justification": "Local agent mesh bypass: statement verified as consistent."
+        }
+
+    # Ensure 3 elements in factors
     while len(top_3_factors) < 3:
         top_3_factors.append("Stable Merchant Operations")
 
-    # Localized text summaries for Text-To-Speech (TTS)
+    # Bilingual translations
     HINDI_FACTOR_MAP = {
-        "Low Failure Rate": "कम विफलता दर",
-        "Acceptable Failure Rate": "स्वीकार्य विफलता दर",
+        "Stellar Transaction Success Rate": "उत्कृष्ट लेनदेन सफलता दर",
+        "High Transaction Failure Rate / Declines": "उच्च लेनदेन विफलता दर",
         "High Failure Rate": "उच्च विफलता दर",
         "Moderate Failure Rate": "मध्यम विफलता दर",
+        "Acceptable Failure Rate": "स्वीकार्य विफलता दर",
+        "Low Failure Rate": "कम विफलता दर",
         "Premium Average Ticket Size": "प्रीमियम औसत टिकट आकार",
         "Healthy Average Ticket Size": "स्वस्थ औसत टिकट आकार",
         "Micro-transaction Volume Penalty": "माइक्रो-लेनदेन पेनल्टी",
+        "Micro-transaction Volume Profile": "सूक्ष्म लेनदेन राशि प्रोफाइल",
         "Standard Average Ticket Size": "सामान्य औसत टिकट आकार",
         "Skyrocketing Month-on-Month Growth": "तेजी से बढ़ती मासिक वृद्धि",
         "Stable Month-on-Month Growth": "स्थिर मासिक वृद्धि",
+        "Strong Month-on-Month Growth": "मजबूत मासिक वृद्धि",
         "Declining Merchant Revenue Growth": "घटती मर्चेंट राजस्व वृद्धि",
         "Flat Growth Trend": "सपाट वृद्धि दर",
         "High Transaction Volume": "उच्च लेनदेन राशि",
+        "Low Overall Transaction Volume": "कम लेनदेन राशि",
         "Consistent Transaction Volume": "लगातार लेनदेन राशि",
         "Low Transaction Volume": "कम लेनदेन राशि",
         "Moderate Transaction Volume": "मध्यम लेनदेन राशि",
+        "Diverse Customer Base": "विविध ग्राहक आधार",
+        "Highly Clustered Customer Base (Self-Payment Risk)": "सीमित ग्राहक आधार (स्वयं-भुगतान जोखिम)",
+        "Standard Business Hour Operations": "सामान्य व्यावसायिक कार्य घंटे",
+        "Unusual Midnight Transaction Velocity Spikes": "असामान्य रात के लेनदेन स्पाइक्स",
+        "Highly Consistent Daily Volume": "अत्यंत सुसंगत दैनिक बिक्री",
+        "Irregular/Volatile Daily Sales Volume": "अस्थिर दैनिक बिक्री राशि",
         "Stable Merchant Operations": "स्थिर मर्चेंट परिचालन",
         "No transaction records found": "कोई लेनदेन रिकॉर्ड नहीं मिला",
         "Insufficient history": "अपर्याप्त इतिहास",
         "Micro-merchant history": "माइक्रो-मर्चेंट इतिहास"
     }
 
-    # Determine bands
     if final_score >= 750:
         en_band = "Excellent"
         hi_band = "उत्कृष्ट"
@@ -401,13 +566,11 @@ def process_scoring(csv_bytes: bytes) -> dict:
         "hi": f"आपका ट्रस्टलेजर क्रेडिट स्कोर 900 में से {final_score} है, जो कि {hi_band} है। आपका मुख्य सकारात्मक कारक {hi_factor} है।"
     }
 
-    # AI recommendations, fraud flags, and lender matchmaking
-    # 1. Matched Lender and Bidding Profile
+    # Match lender
     if final_score >= 750:
         matched_lender = "SBI Digital Merchant Union"
-        credit_limit = int(min(500000, max(100000, total_volume * 0.4)))
         interest_rate = 9.8
-        recommendation = f"Based on your excellent credit profile (score {final_score}) and a stellar transaction success rate of {100 - failure_rate:.1f}%, TrustLedger recommends a prime credit line of ₹{credit_limit:,} at {interest_rate}% p.a."
+        recommendation = f"Based on your excellent credit profile (score {final_score}) and a stellar transaction success rate of {success_rate:.1f}%, TrustLedger recommends a prime credit line of ₹{calculated_limit:,} at {interest_rate}% p.a."
         rationale = f"Outstanding credit quality supported by strong month-on-month growth ({growth_rate*100:.1f}%) and healthy ticket size (average ₹{avg_txn_size:.0f}). Risk exposure is minimal."
         fraud_signals = [
             "PASS: Velocity checks indicate standard retail card/UPI traffic.",
@@ -416,9 +579,8 @@ def process_scoring(csv_bytes: bytes) -> dict:
         ]
     elif final_score >= 550:
         matched_lender = "LendingKart Retail Capital"
-        credit_limit = int(min(200000, max(50000, total_volume * 0.3)))
         interest_rate = 14.5
-        recommendation = f"Based on your stable credit profile (score {final_score}) and solid transactional history, TrustLedger recommends a standard credit line of ₹{credit_limit:,} at {interest_rate}% p.a."
+        recommendation = f"Based on your stable credit profile (score {final_score}) and solid transactional history, TrustLedger recommends a standard credit line of ₹{calculated_limit:,} at {interest_rate}% p.a."
         rationale = f"Stable merchant operations. Consistent monthly volume of ₹{total_volume:,.0f} and acceptable failure rate ({failure_rate:.1f}%) justify credit approval, although moderate ticket size limits larger capital draws."
         fraud_signals = [
             "PASS: Velocity checks indicate standard retail card/UPI traffic.",
@@ -427,9 +589,8 @@ def process_scoring(csv_bytes: bytes) -> dict:
         ]
     else:
         matched_lender = "Neo-Credit Micro-Finance"
-        credit_limit = int(min(30000, max(10000, total_volume * 0.2)))
         interest_rate = 22.0
-        recommendation = f"Based on a subprime credit profile (score {final_score}) and high transaction failure rate ({failure_rate:.1f}%), TrustLedger recommends a restricted micro-credit line of ₹{credit_limit:,} at {interest_rate}% p.a."
+        recommendation = f"Based on a subprime credit profile (score {final_score}) and high transaction failure rate ({failure_rate:.1f}%), TrustLedger recommends a restricted micro-credit line of ₹{calculated_limit:,} at {interest_rate}% p.a."
         rationale = f"High decline rate ({failure_rate:.1f}%) indicates operational risk or integration faults. Transaction volume of ₹{total_volume:,.0f} is insufficient to support standard prime lines. Weekly collection protocol advised."
         fraud_signals = [
             "WARNING: Elevated transaction decline velocity (high decline rate).",
@@ -442,23 +603,10 @@ def process_scoring(csv_bytes: bytes) -> dict:
         "rationale": rationale,
         "fraud_signals": fraud_signals,
         "matched_lender": matched_lender,
-        "credit_limit_inr": credit_limit,
+        "credit_limit_inr": calculated_limit,
         "interest_rate_pct": interest_rate
     }
 
-    metrics_summary = {
-        "merchant_score": int(final_score),
-        "total_transactions": int(total_txns),
-        "successful_transactions": int(success_txns),
-        "failed_transactions": int(failed_txns),
-        "total_volume": float(total_volume),
-        "avg_txn_size": float(avg_txn_size),
-        "failure_rate": float(failure_rate),
-        "growth_rate_pct": float(growth_rate * 100)
-    }
-
-    # Underwriting enhancements calculations
-    # 1. Credit Worthiness Category
     if final_score >= 750:
         worthiness_category = "Excellent / Highly Creditworthy"
     elif final_score >= 650:
@@ -468,20 +616,44 @@ def process_scoring(csv_bytes: bytes) -> dict:
     else:
         worthiness_category = "High Risk"
 
-    # 2. Mapped Credit Limit (in INR)
-    min_date = success_df['date'].min()
-    max_date = success_df['date'].max()
-    if pd.notna(min_date) and pd.notna(max_date) and (max_date > min_date):
-        days = (max_date - min_date).days
-        months = max(1.0, days / 30.0)
+    # Dynamic Loan Offers
+    if final_score >= 750:
+        loan_offers = [
+            { "id": 1, "lender": "Paytm Finance", "amount": f"₹{int(calculated_limit * 0.8):,}", "roi": "10.5% p.a.", "tenure": "12 Months", "status": "Pre-Approved" },
+            { "id": 2, "lender": "HDFC Bank", "amount": f"₹{calculated_limit:,}", "roi": "11.0% p.a.", "tenure": "24 Months", "status": "Pre-Approved" },
+            { "id": 3, "lender": "SBI Digital", "amount": f"₹{int(calculated_limit * 0.9):,}", "roi": "9.8% p.a.", "tenure": "18 Months", "status": "Eligible" }
+        ]
+    elif final_score >= 650:
+        loan_offers = [
+            { "id": 1, "lender": "Paytm Finance", "amount": f"₹{int(calculated_limit * 0.75):,}", "roi": "11.5% p.a.", "tenure": "12 Months", "status": "Pre-Approved" },
+            { "id": 2, "lender": "HDFC Bank", "amount": f"₹{calculated_limit:,}", "roi": "12.0% p.a.", "tenure": "24 Months", "status": "Eligible" },
+            { "id": 3, "lender": "LendingKart", "amount": f"₹{int(calculated_limit * 0.9):,}", "roi": "12.5% p.a.", "tenure": "18 Months", "status": "Eligible" }
+        ]
+    elif final_score >= 550:
+        loan_offers = [
+            { "id": 1, "lender": "Paytm Finance", "amount": f"₹{int(calculated_limit * 0.7):,}", "roi": "14.5% p.a.", "tenure": "12 Months", "status": "Eligible" },
+            { "id": 2, "lender": "LendingKart", "amount": f"₹{calculated_limit:,}", "roi": "15.0% p.a.", "tenure": "12 Months", "status": "Eligible" },
+            { "id": 3, "lender": "Neo-Credit Micro", "amount": f"₹{int(calculated_limit * 0.8):,}", "roi": "16.5% p.a.", "tenure": "6 Months", "status": "Pre-Approved" }
+        ]
     else:
-        months = 1.0
-    monthly_volume = float(success_df['amount'].sum() / months)
+        high_risk_limit = max(10000, calculated_limit)
+        loan_offers = [
+            { "id": 1, "lender": "Neo-Credit Micro-Finance", "amount": f"₹{high_risk_limit:,}", "roi": "22.0% p.a.", "tenure": "6 Months", "status": "Eligible" },
+            { "id": 2, "lender": "LendingKart (Subprime)", "amount": f"₹{int(high_risk_limit * 0.8):,}", "roi": "24.0% p.a.", "tenure": "6 Months", "status": "Eligible" }
+        ]
 
-    normalized_score = max(0.0, min(1.0, (final_score - 300.0) / 600.0))
-    base_limit = 500000.0 * normalized_score
-    volume_factor = min(1.0, monthly_volume / 100000.0) if monthly_volume > 0 else 0.0
-    calculated_limit = int(base_limit * volume_factor)
+    return {
+        "merchant_score": final_score,
+        "credit_score": final_score,
+        "worthiness_category": worthiness_category,
+        "credit_limit": calculated_limit,
+        "loan_offers": loan_offers,
+        "top_factors": top_3_factors,
+        "audio_summary": audio_summary,
+        "ai_analysis": ai_analysis,
+        "metrics_summary": metrics_summary,
+        "ml_audit_verdict": ml_audit_verdict if has_models else None
+    }
 
     # 3. Dynamic Loan Offers matching standings
     loan_offers = []
@@ -535,11 +707,13 @@ async def calculate_score(file: UploadFile = File(...)):
         results = process_scoring(csv_bytes)
         
         # Dispatch to AgentField control plane endpoint asynchronously
-        agentfield_audit = {
-            "is_clean": True,
-            "risk_factor_score": 0.0,
-            "justification": "Local agent mesh bypass: statement verified as consistent."
-        }
+        agentfield_audit = results.get("ml_audit_verdict")
+        if not agentfield_audit:
+            agentfield_audit = {
+                "is_clean": True,
+                "risk_factor_score": 0.0,
+                "justification": "Local agent mesh bypass: statement verified as consistent."
+            }
         
         metrics_summary = results.get("metrics_summary", {})
         if not metrics_summary:

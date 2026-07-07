@@ -18,7 +18,8 @@ import {
   Calendar,
   Volume2,
   Share2,
-  Download
+  Download,
+  WifiOff
 } from 'lucide-react';
 
 import { ScoreBreakdown, DemoModeBanner, LoanOfferPanel, RiskFlags } from './components/TrustLedgerFeatures';
@@ -673,73 +674,82 @@ function App() {
   };
 
   return (
-    <div className={`min-h-screen flex flex-col font-sans selection:bg-blue-600/30 relative overflow-hidden transition-all duration-300 ${
-      isHighContrast ? 'bg-black text-white' : 'bg-[#08090c] text-gray-100'
+    <div className={`min-h-screen flex flex-col font-sans selection:bg-indigo-600/30 relative overflow-hidden transition-all duration-300 ${
+      isHighContrast ? 'bg-black text-white' : 'bg-[#060813] text-slate-100'
     }`}>
       
       {/* Blurred background glows (disabled in high contrast for strict accessibility) */}
       {!isHighContrast && (
         <>
-          <div className="absolute top-[-10%] left-[-10%] w-[50%] h-[50%] bg-blue-600/10 rounded-full filter blur-[120px] pointer-events-none"></div>
-          <div className="absolute bottom-[-10%] right-[-10%] w-[50%] h-[50%] bg-emerald-600/5 rounded-full filter blur-[120px] pointer-events-none"></div>
+          <div className="absolute top-[-10%] left-[-10%] w-[50%] h-[50%] bg-indigo-600/10 rounded-full filter blur-[140px] pointer-events-none"></div>
+          <div className="absolute bottom-[-10%] right-[-10%] w-[50%] h-[50%] bg-emerald-600/5 rounded-full filter blur-[140px] pointer-events-none"></div>
+          <div className="absolute top-[30%] right-[20%] w-[40%] h-[40%] bg-violet-600/5 rounded-full filter blur-[140px] pointer-events-none"></div>
         </>
       )}
 
       {/* Header */}
-      <header className={`border-b sticky top-0 z-50 transition-colors duration-200 ${
-        isHighContrast ? 'bg-black border-white' : 'border-gray-800 bg-[#0c0d12]/80 backdrop-blur-md'
+      <header className={`border-b sticky top-0 z-50 transition-all duration-300 ${
+        isHighContrast ? 'bg-black border-white' : 'border-slate-900 bg-[#080c16]/75 backdrop-blur-md'
       }`}>
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-20 flex items-center justify-between">
           <button 
             onClick={() => setActiveTab('merchant')}
-            className="flex items-center space-x-3 text-left focus-visible:ring-4 focus-visible:ring-yellow-400 focus-visible:outline-none rounded-xl"
+            className="flex items-center space-x-3 text-left focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:outline-none rounded-xl cursor-pointer group"
           >
-            <div className={`p-2.5 rounded-xl ${isHighContrast ? 'bg-white text-black' : 'bg-gradient-to-tr from-blue-600 to-indigo-600 shadow-lg shadow-blue-500/20'}`}>
+            <div className={`p-2.5 rounded-xl transition duration-300 ${
+              isHighContrast 
+                ? 'bg-white text-black' 
+                : 'bg-[#101426] border border-slate-800 text-indigo-400 group-hover:border-indigo-500/50 group-hover:shadow-[0_0_15px_rgba(99,102,241,0.15)]'
+            }`}>
               <Shield className="h-6 w-6 text-current" />
             </div>
             <div>
-              <h1 className={`text-xl font-bold tracking-tight ${isHighContrast ? 'text-white' : 'bg-gradient-to-r from-white via-gray-200 to-gray-400 bg-clip-text text-transparent'}`}>
-                TrustLedger
-              </h1>
-              <p className={`text-xs font-semibold uppercase tracking-wider ${isHighContrast ? 'text-white font-extrabold' : 'text-gray-500'}`}>Paytm Merchant Underwriting</p>
+              <div className="flex items-center space-x-2">
+                <h1 className={`text-xl font-extrabold tracking-tight ${isHighContrast ? 'text-white' : 'bg-gradient-to-r from-white via-slate-100 to-indigo-200 bg-clip-text text-transparent'}`}>
+                  TrustLedger
+                </h1>
+                <span className="text-[9px] font-bold px-1.5 py-0.5 rounded-md bg-indigo-500/10 text-indigo-400 border border-indigo-500/20">v1.2.0</span>
+              </div>
+              <p className={`text-[10px] font-bold uppercase tracking-widest ${isHighContrast ? 'text-white font-extrabold' : 'text-slate-500'}`}>Paytm Underwriting Protocol</p>
             </div>
           </button>
 
-          <div className="flex items-center space-x-3">
+          <div className="flex items-center space-x-4">
             {/* High-Contrast Toggler */}
             <button
               onClick={() => setIsHighContrast(!isHighContrast)}
               aria-pressed={isHighContrast}
-              className={`flex items-center space-x-2 border px-3 py-2 rounded-xl text-xs font-bold transition duration-200 cursor-pointer focus-visible:ring-4 focus-visible:ring-yellow-400 focus-visible:outline-none ${
+              className={`flex items-center space-x-2 border px-3.5 py-2 rounded-xl text-xs font-semibold transition duration-200 cursor-pointer focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:outline-none ${
                 isHighContrast 
                   ? 'bg-white text-black border-black font-black' 
-                  : 'bg-[#12141c] border-gray-800 text-gray-300 hover:border-gray-700'
+                  : 'bg-[#0f1222] border-slate-800 text-slate-300 hover:border-slate-700 hover:text-white'
               }`}
             >
-              <span>Accessibility Mode: {isHighContrast ? "ON" : "OFF"}</span>
+              <div className={`w-2 h-2 rounded-full ${isHighContrast ? 'bg-black' : 'bg-indigo-500 animate-pulse'}`} />
+              <span>Contrast Mode: {isHighContrast ? "ON" : "OFF"}</span>
             </button>
 
             {walletConnected ? (
-              <div className={`flex items-center space-x-2 rounded-xl px-4 py-2 text-sm border ${
-                isHighContrast ? 'bg-black border-white' : 'bg-[#12141c] border-blue-500/20'
+              <div className={`flex items-center space-x-2.5 rounded-xl px-4 py-2 text-sm border ${
+                isHighContrast ? 'bg-black border-white' : 'bg-[#0d1020] border-indigo-500/20 shadow-[0_0_15px_rgba(99,102,241,0.05)]'
               }`}>
-                <Wallet className="h-4 w-4 text-blue-400" />
-                <span className="text-gray-300 font-mono text-xs">
+                <Wallet className="h-4 w-4 text-indigo-400" />
+                <span className="text-slate-300 font-mono text-xs font-medium">
                   {walletAddress.slice(0, 6)}...{walletAddress.slice(-4)}
                 </span>
                 <span className={`text-[10px] font-bold px-2 py-0.5 rounded-md ${
-                  isHighContrast ? 'bg-white text-black' : 'text-blue-400 bg-blue-500/10'
+                  isHighContrast ? 'bg-white text-black' : 'text-indigo-400 bg-indigo-500/10 border border-indigo-500/20'
                 }`}>
-                  Polygon
+                  Polygon PoS
                 </span>
               </div>
             ) : (
               <button 
                 onClick={connectWallet}
-                className={`flex items-center space-x-2 font-semibold text-sm px-4 py-2.5 rounded-xl transition duration-200 hover:scale-[1.02] cursor-pointer focus-visible:ring-4 focus-visible:ring-yellow-400 focus-visible:outline-none ${
+                className={`flex items-center space-x-2 font-semibold text-xs px-4.5 py-2.5 rounded-xl transition duration-250 cursor-pointer focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:outline-none shadow-md ${
                   isHighContrast 
                     ? 'bg-white text-black border border-black font-black' 
-                    : 'bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white shadow-lg shadow-blue-500/20'
+                    : 'bg-indigo-600 hover:bg-indigo-500 text-white shadow-indigo-600/10 hover:shadow-indigo-600/20 hover:scale-[1.02]'
                 }`}
               >
                 <Wallet className="h-4 w-4" />
@@ -752,36 +762,36 @@ function App() {
 
       {/* Navigation Tabs Menu */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mt-8 w-full">
-        <div className={`flex p-1.5 rounded-xl border w-fit ${
-          isHighContrast ? 'bg-black border-white' : 'bg-[#11131a] border-gray-800'
+        <div className={`flex p-1 rounded-xl border w-fit ${
+          isHighContrast ? 'bg-black border-white' : 'bg-[#0d101d] border-slate-900 shadow-inner'
         }`}>
           <button
             onClick={() => setActiveTab('merchant')}
-            className={`px-6 py-2.5 rounded-lg font-semibold text-sm transition-all duration-200 cursor-pointer flex items-center space-x-2 focus-visible:ring-4 focus-visible:ring-yellow-400 focus-visible:outline-none ${
+            className={`px-6 py-2.5 rounded-lg font-semibold text-xs transition-all duration-200 cursor-pointer flex items-center space-x-2 focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:outline-none ${
               activeTab === 'merchant'
-                ? isHighContrast ? 'bg-white text-black font-black' : 'bg-blue-600 text-white shadow-md'
-                : 'text-gray-400 hover:text-gray-200'
+                ? isHighContrast ? 'bg-white text-black font-black' : 'bg-indigo-600 text-white shadow-md shadow-indigo-600/10'
+                : 'text-slate-400 hover:text-slate-200'
             }`}
           >
             <Activity className="h-4 w-4" />
-            <span>Merchant Dashboard</span>
+            <span>Merchant Console</span>
           </button>
           <button
             onClick={() => setActiveTab('lender')}
-            className={`px-6 py-2.5 rounded-lg font-semibold text-sm transition-all duration-200 cursor-pointer flex items-center space-x-2 focus-visible:ring-4 focus-visible:ring-yellow-400 focus-visible:outline-none ${
+            className={`px-6 py-2.5 rounded-lg font-semibold text-xs transition-all duration-200 cursor-pointer flex items-center space-x-2 focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:outline-none ${
               activeTab === 'lender'
-                ? isHighContrast ? 'bg-white text-black font-black' : 'bg-blue-600 text-white shadow-md'
-                : 'text-gray-400 hover:text-gray-200'
+                ? isHighContrast ? 'bg-white text-black font-black' : 'bg-indigo-600 text-white shadow-md shadow-indigo-600/10'
+                : 'text-slate-400 hover:text-slate-200'
             }`}
           >
             <Search className="h-4 w-4" />
-            <span>Lender Portal</span>
+            <span>Lender Underwriting</span>
           </button>
         </div>
       </div>
 
       {/* Main Content Area */}
-      <main className="flex-grow max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 w-full">
+      <main className="flex-grow max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 w-full">
         
         {activeTab === 'merchant' ? (
           /* Merchant Dashboard View */
@@ -792,15 +802,15 @@ function App() {
               <div 
                 tabIndex={0}
                 className={`rounded-2xl p-6 border ${
-                  isHighContrast ? 'bg-black border-white border-2' : 'glass-panel border-gray-800'
+                  isHighContrast ? 'bg-black border-white border-2' : 'glass-panel border-slate-900 shadow-xl'
                 }`}
               >
-                <div className="flex items-center space-x-2 mb-2">
-                  <Upload className="h-5 w-5 text-blue-400" />
-                  <h3 className="text-lg font-bold text-white">Ingest Transaction Ledger</h3>
+                <div className="flex items-center space-x-2.5 mb-2.5">
+                  <Upload className="h-5 w-5 text-indigo-400 animate-pulse" />
+                  <h3 className="text-md font-bold text-white uppercase tracking-wider">Ingest Transaction Ledger</h3>
                 </div>
-                <p className="text-sm text-gray-400 mb-6 leading-relaxed">
-                  Drag and drop a synthetic Paytm statement file to execute an in-memory underwriting evaluation.
+                <p className="text-xs text-slate-400 mb-5 leading-relaxed">
+                  Drag and drop a Paytm payment statement CSV file to initiate cryptographic risk assessments.
                 </p>
 
                 {/* Drag and Drop Zone with Keyboard Navigation Support */}
@@ -815,10 +825,10 @@ function App() {
                       fileInputRef.current.click();
                     }
                   }}
-                  className={`border-2 border-dashed rounded-2xl p-8 text-center transition duration-200 bg-[#12141c]/30 relative overflow-hidden group flex flex-col items-center justify-center cursor-pointer focus-visible:ring-4 focus-visible:ring-yellow-400 focus-visible:outline-none ${
+                  className={`border-2 border-dashed rounded-2xl p-8 text-center transition-all duration-300 relative overflow-hidden group flex flex-col items-center justify-center cursor-pointer focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:outline-none ${
                     isDragOver 
-                      ? 'border-blue-500 bg-blue-500/5' 
-                      : isHighContrast ? 'border-white bg-black hover:bg-gray-900' : 'border-gray-800 hover:border-gray-700'
+                      ? 'border-indigo-500 bg-indigo-500/5' 
+                      : isHighContrast ? 'border-white bg-black hover:bg-gray-900' : 'border-slate-800 bg-[#0a0d18]/40 hover:border-slate-700 hover:bg-[#0c1020]/60'
                   }`}
                 >
                   <input
@@ -829,30 +839,33 @@ function App() {
                     className="absolute inset-0 opacity-0 cursor-pointer z-10"
                     tabIndex={-1} /* handled by parent div */
                   />
-                  <div className="p-4 bg-blue-500/10 rounded-xl text-blue-400 group-hover:scale-110 transition duration-200 mb-3">
+                  <div className={`p-4 rounded-xl transition duration-300 mb-3 ${
+                    isHighContrast ? 'bg-white text-black' : 'bg-indigo-500/10 text-indigo-400 group-hover:scale-105'
+                  }`}>
                     <FileSpreadsheet className="h-8 w-8" />
                   </div>
-                  <h4 className="text-sm font-bold text-gray-200">
+                  <h4 className="text-xs font-bold text-slate-250 truncate max-w-[250px]">
                     {selectedFile ? selectedFile.name : "Drop Paytm Statement CSV"}
                   </h4>
-                  <p className="text-xs text-gray-500 mt-1">or click/press Enter to browse</p>
+                  <p className="text-[10px] text-slate-500 mt-1.5 font-medium">or click to browse files</p>
+                  
                   <button
                     onClick={downloadCSVTemplate}
-                    className="relative z-20 mt-3 text-xs text-blue-400 hover:text-blue-300 font-semibold underline cursor-pointer focus:outline-none focus:ring-2 focus:ring-blue-500 rounded px-1.5 py-0.5"
+                    className="relative z-20 mt-4 text-[10px] text-indigo-400 hover:text-indigo-300 font-bold underline cursor-pointer focus:outline-none focus:ring-1 focus:ring-indigo-500 rounded px-1.5 py-0.5"
                   >
                     Download CSV Template
                   </button>
                 </div>
 
                 {uploading && (
-                  <div className="flex items-center space-x-3 mt-4 p-3 bg-blue-500/10 border border-blue-500/20 rounded-xl text-sm text-blue-400">
+                  <div className="flex items-center space-x-3 mt-4 p-3 bg-indigo-500/5 border border-indigo-500/10 rounded-xl text-xs text-indigo-400 font-medium">
                     <RefreshCw className="h-4 w-4 animate-spin" />
-                    <span className="font-semibold">Calculating credit metrics in-memory...</span>
+                    <span>Executing ledger underwriting logic...</span>
                   </div>
                 )}
 
                 {/* Hint & Presets for Demo */}
-                <div className="mt-6 pt-4 border-t border-gray-800/80">
+                <div className="mt-5 pt-4 border-t border-slate-900">
                   <DemoModeBanner onPresetLoad={handleLoadPreset} isHighContrast={isHighContrast} />
                 </div>
               </div>
@@ -861,44 +874,61 @@ function App() {
               <div 
                 tabIndex={0}
                 className={`rounded-2xl p-6 border flex flex-col space-y-4 ${
-                  isHighContrast ? 'bg-black border-white border-2 text-white' : 'glass-panel border-gray-800'
+                  isHighContrast ? 'bg-black border-white border-2 text-white' : 'glass-panel border-slate-900 shadow-xl'
                 }`}
               >
-                <div className="flex items-center justify-between border-b border-gray-800/50 pb-3">
-                  <div className="flex items-center space-x-2">
-                    <Shield className={`h-5 w-5 ${isHighContrast ? 'text-white' : 'text-blue-400'}`} />
-                    <h4 className="text-sm font-bold text-white">AgentField.ai Cryptographic Audit Monitoring</h4>
+                <div className="flex items-center justify-between border-b border-slate-900 pb-3">
+                  <div className="flex items-center space-x-2.5">
+                    <Shield className={`h-5 w-5 ${isHighContrast ? 'text-white' : 'text-indigo-400'}`} />
+                    <h4 className="text-xs font-bold text-white uppercase tracking-wider">Cryptographic Security Sandbox</h4>
                   </div>
-                  <span className={`px-2 py-0.5 rounded text-[10px] font-mono tracking-widest uppercase ${
-                    scoringResult ? 'bg-blue-500/10 text-blue-400 border border-blue-500/20' : 'bg-gray-800 text-gray-500'
+                  <span className={`px-2 py-0.5 rounded-md text-[9px] font-mono tracking-widest uppercase font-semibold ${
+                    scoringResult ? 'bg-indigo-500/10 text-indigo-400 border border-indigo-500/20' : 'bg-slate-900 text-slate-500'
                   }`}>
                     SEC-AF v1.2
                   </span>
                 </div>
 
-                <div className="flex items-center justify-between">
-                  <span className="text-xs text-gray-400 font-semibold">Verdict:</span>
-                  <span className={`px-3 py-1 rounded-full text-xs font-black tracking-wider uppercase border ${
+                <div className="flex items-center justify-between text-xs">
+                  <span className="text-slate-400 font-medium">Validation Status:</span>
+                  <span className={`px-3 py-1 rounded-full text-[10px] font-extrabold tracking-wider uppercase border flex items-center space-x-1.5 ${
                     scoringResult?.agentfield_audit
                       ? scoringResult.agentfield_audit.is_clean
-                        ? isHighContrast ? 'bg-black border-white text-white border-2' : 'bg-emerald-500/10 border-emerald-500/25 text-emerald-400'
-                        : isHighContrast ? 'bg-white text-black border-black border-2' : 'bg-rose-500/10 border-rose-500/25 text-rose-400 animate-pulse'
-                      : 'bg-gray-900 border-gray-800 text-gray-500'
+                        ? isHighContrast ? 'bg-black border-white text-white border-2' : 'bg-emerald-500/10 border-emerald-500/20 text-emerald-400'
+                        : isHighContrast ? 'bg-white text-black border-black border-2' : 'bg-rose-500/10 border-rose-500/20 text-rose-400 animate-pulse'
+                      : 'bg-slate-900 border-slate-800 text-slate-500'
                   }`}>
-                    {scoringResult?.agentfield_audit
-                      ? (scoringResult.agentfield_audit.is_clean ? "VERDICT: CLEAN" : "VERDICT: REVIEW")
-                      : "AWAITING INGESTION"}
+                    <span className={`w-1.5 h-1.5 rounded-full ${
+                      scoringResult?.agentfield_audit
+                        ? scoringResult.agentfield_audit.is_clean ? 'bg-emerald-400' : 'bg-rose-400 animate-ping'
+                        : 'bg-slate-500'
+                    }`} />
+                    <span>
+                      {scoringResult?.agentfield_audit
+                        ? (scoringResult.agentfield_audit.is_clean ? "CLEAN" : "SUSPECTED ATTACK")
+                        : "IDLE"}
+                    </span>
                   </span>
                 </div>
 
-                {/* Justification Text Block */}
-                <div className={`p-4 rounded-xl text-xs font-mono border leading-relaxed min-h-[80px] flex flex-col justify-center ${
-                  isHighContrast ? 'bg-black border-white text-white' : 'bg-[#0a0b0e] border-gray-800/80 text-gray-300'
+                {/* Justification Text Block styled like terminal */}
+                <div className={`terminal-window rounded-xl overflow-hidden border ${
+                  isHighContrast ? 'bg-black border-white text-white' : 'border-slate-900'
                 }`}>
-                  <span className="text-[10px] text-gray-500 uppercase tracking-widest block mb-2 font-bold">Autonomous Agent Audit Trace</span>
-                  <p className="whitespace-pre-wrap">
-                    {scoringResult?.agentfield_audit?.justification || "SYSTEM STATE: Idle. Please upload a merchant transaction ledger to trigger the autonomous cryptographic threat evaluation sequence..."}
-                  </p>
+                  <div className="terminal-header px-4 py-2 flex items-center justify-between text-[10px] text-slate-500 font-mono">
+                    <div className="flex space-x-1.5">
+                      <span className="w-2.5 h-2.5 rounded-full bg-rose-500/70" />
+                      <span className="w-2.5 h-2.5 rounded-full bg-amber-500/70" />
+                      <span className="w-2.5 h-2.5 rounded-full bg-emerald-500/70" />
+                    </div>
+                    <span>sec-af-monitor</span>
+                  </div>
+                  <div className="p-4 text-[10.5px] font-mono leading-relaxed min-h-[90px] text-slate-300">
+                    <span className="text-[9px] text-indigo-400/70 uppercase tracking-widest block mb-2 font-bold">[AUDIT LOG TRACE]</span>
+                    <p className="whitespace-pre-wrap">
+                      {scoringResult?.agentfield_audit?.justification || "SYSTEM STATE: Awaiting Statement Upload. Sandbox initialized. Safe mode active..."}
+                    </p>
+                  </div>
                 </div>
               </div>
 
@@ -907,64 +937,64 @@ function App() {
                 <div 
                   tabIndex={0}
                   className={`rounded-2xl p-6 border flex flex-col space-y-4 mt-6 ${
-                    isHighContrast ? 'bg-black border-white border-2 text-white' : 'glass-panel border-gray-800'
+                    isHighContrast ? 'bg-black border-white border-2 text-white' : 'glass-panel border-slate-900 shadow-xl'
                   }`}
                 >
-                  <div className="flex items-center justify-between border-b border-gray-800/50 pb-3">
+                  <div className="flex items-center justify-between border-b border-slate-900 pb-3">
                     <div className="flex items-center space-x-2">
-                      <Sparkles className={`h-5 w-5 ${isHighContrast ? 'text-white' : 'text-blue-400'}`} />
-                      <h4 className="text-sm font-bold text-white">Received Loan Offers</h4>
+                      <Sparkles className={`h-4 w-4 ${isHighContrast ? 'text-white' : 'text-indigo-400'}`} />
+                      <h4 className="text-xs font-bold text-white uppercase tracking-wider">Pre-Approved Capital Offers</h4>
                     </div>
                   </div>
 
                   {!scoringResult.loan_offers || scoringResult.loan_offers.length === 0 ? (
-                    <p className="text-xs text-gray-500 italic py-2 text-center">No loan offers generated for this rating tier.</p>
+                    <p className="text-xs text-slate-500 italic py-4 text-center">No matching loan offers generated for this score range.</p>
                   ) : (
                     <div className="grid grid-cols-1 gap-4">
                       {scoringResult.loan_offers.map((offer) => (
                         <div 
                           key={offer.id}
-                          className={`p-4 rounded-xl border flex flex-col justify-between space-y-3 transition duration-200 hover:scale-[1.01] ${
+                          className={`p-5 rounded-2xl border flex flex-col justify-between space-y-3 hover-scale hover:shadow-lg ${
                             isHighContrast 
                               ? 'bg-black border-white text-white border-2' 
-                              : 'bg-[#12141c]/50 border-gray-800 text-gray-300'
+                              : 'bg-[#0e111e]/40 border-slate-900 text-slate-300'
                           }`}
                         >
                           <div className="flex justify-between items-start">
                             <div>
-                              <span className="text-[10px] text-gray-500 uppercase font-bold block">Lender</span>
-                              <span className="font-extrabold text-white text-sm">{offer.lender}</span>
+                              <span className="text-[9px] text-slate-500 uppercase font-bold block tracking-wider">Underwriting Partner</span>
+                              <span className="font-extrabold text-white text-xs">{offer.lender}</span>
                             </div>
-                            <span className={`px-2.5 py-0.5 rounded-full text-[9px] font-black uppercase tracking-wider ${
+                            <span className={`px-2.5 py-0.5 rounded-full text-[9px] font-bold uppercase tracking-wider border ${
                               offer.status === 'Pre-Approved'
-                                ? isHighContrast ? 'bg-white text-black font-black border border-black' : 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/25'
-                                : isHighContrast ? 'bg-black border border-white text-white' : 'bg-blue-500/10 text-blue-400 border border-blue-500/25'
+                                ? isHighContrast ? 'bg-white text-black font-black border border-black' : 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20'
+                                : isHighContrast ? 'bg-black border border-white text-white' : 'bg-indigo-500/10 text-indigo-400 border-indigo-500/20'
                             }`}>
                               {offer.status}
                             </span>
                           </div>
 
-                          <div className="grid grid-cols-3 gap-2 py-2 border-t border-b border-gray-800/40 text-xs">
+                          <div className="grid grid-cols-3 gap-2 py-2.5 border-t border-b border-slate-900/60 text-xs font-medium">
                             <div>
-                              <span className="text-gray-500 block text-[9px] uppercase font-bold">Amount</span>
-                              <span className="font-extrabold text-white">{offer.amount}</span>
+                              <span className="text-slate-500 block text-[9px] uppercase font-bold tracking-wider">Amount</span>
+                              <span className="font-bold text-white">{offer.amount}</span>
                             </div>
                             <div>
-                              <span className="text-gray-500 block text-[9px] uppercase font-bold">ROI</span>
-                              <span className="font-extrabold text-emerald-400">{offer.roi}</span>
+                              <span className="text-slate-500 block text-[9px] uppercase font-bold tracking-wider">ROI</span>
+                              <span className="font-bold text-emerald-400">{offer.roi}</span>
                             </div>
                             <div>
-                              <span className="text-gray-500 block text-[9px] uppercase font-bold">Tenure</span>
-                              <span className="font-extrabold text-white">{offer.tenure}</span>
+                              <span className="text-slate-500 block text-[9px] uppercase font-bold tracking-wider">Tenure</span>
+                              <span className="font-bold text-white">{offer.tenure}</span>
                             </div>
                           </div>
 
                           <button
                             onClick={() => alert(`Application submitted to ${offer.lender} for ${offer.amount}!`)}
-                            className={`w-full py-2 rounded-lg text-xs font-bold transition duration-200 cursor-pointer focus-visible:ring-2 focus-visible:ring-yellow-400 focus-visible:outline-none ${
+                            className={`w-full py-2.5 rounded-xl text-xs font-bold transition duration-200 cursor-pointer focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:outline-none ${
                               isHighContrast
                                 ? 'bg-white text-black hover:bg-gray-100 font-black border border-black'
-                                : 'bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white shadow-md'
+                                : 'bg-indigo-600 hover:bg-indigo-500 text-white shadow-md shadow-indigo-600/10'
                             }`}
                           >
                             Apply Now
@@ -980,93 +1010,168 @@ function App() {
             {/* Score Display Section (Right Column) */}
             <div className="lg:col-span-7">
               {scoringError ? (
-                /* Premium AgentFieldAI Threat Blocked Panel */
-                <div 
-                  tabIndex={0}
-                  className={`rounded-3xl p-8 border relative overflow-hidden text-center flex flex-col items-center justify-center min-h-[400px] shadow-2xl transition-all duration-300 ${
-                    isHighContrast 
-                      ? 'bg-black border-white border-2 text-white font-bold' 
-                      : 'glass-panel border-rose-500/30 bg-rose-950/5 text-gray-200'
-                  }`}
-                >
-                  {/* Decorative background glows */}
-                  {!isHighContrast && (
-                    <div className="absolute right-0 top-0 w-64 h-64 bg-rose-600/10 rounded-full filter blur-3xl pointer-events-none"></div>
-                  )}
+                (() => {
+                  const isSecurityThreat = scoringError.includes("Threat") || 
+                                           scoringError.includes("injection") || 
+                                           scoringError.includes("vulnerability") || 
+                                           scoringError.includes("blocked") || 
+                                           scoringError.includes("vulnerable");
+                  
+                  if (isSecurityThreat) {
+                    return (
+                      /* Premium AgentFieldAI Threat Blocked Panel */
+                      <div 
+                        tabIndex={0}
+                        className={`rounded-3xl p-8 border relative overflow-hidden text-center flex flex-col items-center justify-center min-h-[400px] shadow-2xl transition-all duration-350 ${
+                          isHighContrast 
+                            ? 'bg-black border-white border-2 text-white font-bold' 
+                            : 'glass-panel border-rose-500/25 bg-[#1a0a10]/50 text-slate-200'
+                        }`}
+                      >
+                        {/* Decorative background glows */}
+                        {!isHighContrast && (
+                          <div className="absolute right-0 top-0 w-64 h-64 bg-rose-600/10 rounded-full filter blur-3xl pointer-events-none animate-pulse"></div>
+                        )}
 
-                  <div className={`border p-4 rounded-full mb-6 animate-pulse ${
-                    isHighContrast 
-                      ? 'border-white text-white bg-black' 
-                      : 'bg-rose-500/10 border-rose-500/20 text-rose-400'
-                  }`}>
-                    <Shield className="h-10 w-10 text-current" />
-                  </div>
+                        <div className={`border p-4 rounded-full mb-5 ${
+                          isHighContrast 
+                            ? 'border-white text-white bg-black' 
+                            : 'bg-rose-500/10 border-rose-500/20 text-rose-400'
+                        }`}>
+                          <Shield className="h-9 w-9 text-current" />
+                        </div>
 
-                  <h3 className={`text-xl font-extrabold mb-3 tracking-wide uppercase ${isHighContrast ? 'text-white font-black' : 'text-white'}`}>
-                    AgentFieldAI: Threat Blocked
-                  </h3>
-                  <p className={`text-sm max-w-md mb-6 leading-relaxed ${isHighContrast ? 'text-white font-bold' : 'text-gray-400'}`}>
-                    A malicious code injection attack has been detected during in-memory underwriting. Access to score calculation and smart contract publishing has been restricted.
-                  </p>
+                        <h3 className={`text-lg font-extrabold mb-2 tracking-wide uppercase ${isHighContrast ? 'text-white font-black' : 'text-white'}`}>
+                          Sandbox Threat Intercepted
+                        </h3>
+                        <p className={`text-xs max-w-md mb-6 leading-relaxed ${isHighContrast ? 'text-white font-bold' : 'text-slate-400'}`}>
+                          An active code injection vulnerability was isolated in the transaction log data. Score execution has been sandboxed for environment safety.
+                        </p>
 
-                  <div className={`border rounded-xl p-5 w-full max-w-lg text-left space-y-3 mb-6 ${
-                    isHighContrast ? 'bg-black border-white border-2 text-white' : 'bg-[#151215] border-rose-500/10'
-                  }`}>
-                    <div className="flex items-start justify-between text-xs gap-4">
-                      <span className={`${isHighContrast ? 'text-white font-extrabold' : 'text-rose-600'} font-bold shrink-0`}>Detection Rule:</span>
-                      <span className={`font-mono ${isHighContrast ? 'text-white font-bold' : 'text-gray-300'}`}>OWASP-CSV-Injection (Formula Attestation)</span>
-                    </div>
-                    <div className="flex items-start justify-between text-xs gap-4">
-                      <span className={`${isHighContrast ? 'text-white font-extrabold' : 'text-rose-600'} font-bold shrink-0`}>Threat Verdict:</span>
-                      <span className={`font-mono text-left leading-relaxed ${isHighContrast ? 'text-white font-bold' : 'text-gray-300'}`}>
-                        {scoringError}
-                      </span>
-                    </div>
-                    <div className="flex items-start justify-between text-xs gap-4">
-                      <span className={`${isHighContrast ? 'text-white font-extrabold' : 'text-rose-600'} font-bold shrink-0`}>Evidence Logged:</span>
-                      <span className={`font-mono ${isHighContrast ? 'text-white' : 'text-gray-400'} text-xs`}>
-                        Blocked payload execution, system status quarantined (Local Sandbox).
-                      </span>
-                    </div>
-                  </div>
+                        <div className={`border rounded-2xl p-5 w-full max-w-lg text-left space-y-3 mb-6 font-mono text-[10.5px] leading-relaxed ${
+                          isHighContrast ? 'bg-black border-white border-2 text-white' : 'bg-[#0a0709] border-rose-500/10'
+                        }`}>
+                          <div className="flex items-start justify-between gap-4">
+                            <span className={`${isHighContrast ? 'text-white font-extrabold' : 'text-rose-400'} font-bold shrink-0`}>Rule Type:</span>
+                            <span className={`font-semibold ${isHighContrast ? 'text-white font-bold' : 'text-slate-300'}`}>OWASP-CSV-FormulaAttestation</span>
+                          </div>
+                          <div className="flex items-start justify-between gap-4">
+                            <span className={`${isHighContrast ? 'text-white font-extrabold' : 'text-rose-400'} font-bold shrink-0`}>Attack Payload:</span>
+                            <span className={`text-left text-rose-300`}>
+                              {scoringError}
+                            </span>
+                          </div>
+                          <div className="flex items-start justify-between gap-4">
+                            <span className={`${isHighContrast ? 'text-white font-extrabold' : 'text-rose-400'} font-bold shrink-0`}>Action taken:</span>
+                            <span className={`text-slate-400`}>
+                              Calculations locked, alert traces logged on Polygon blockchain.
+                            </span>
+                          </div>
+                        </div>
 
-                  <div className="flex flex-col sm:flex-row items-center gap-4 w-full justify-center">
-                    <a 
-                      href="https://github.com/Agent-Field/sec-af" 
-                      target="_blank" 
-                      rel="noreferrer"
-                      className={`flex items-center space-x-1.5 text-xs font-bold hover:underline focus-visible:ring-4 focus-visible:ring-yellow-400 focus-visible:outline-none rounded ${
-                        isHighContrast ? 'text-white' : 'text-rose-500 hover:text-rose-400'
-                      }`}
-                    >
-                      <span>Audited by Agent-Field sec-af</span>
-                      <ExternalLink className="h-3.5 w-3.5" />
-                    </a>
-                    <span className={`${isHighContrast ? 'text-white' : 'text-gray-600'} hidden sm:inline`}>|</span>
-                    <button
-                      onClick={() => setScoringError(null)}
-                      className={`text-xs font-bold cursor-pointer transition duration-200 focus-visible:ring-4 focus-visible:ring-yellow-400 focus-visible:outline-none rounded ${
-                        isHighContrast 
-                          ? 'bg-black text-white border-2 border-white hover:bg-gray-900 py-1.5 px-4 rounded-full' 
-                          : 'text-gray-400 hover:text-gray-200'
-                      }`}
-                    >
-                      Clear Threat Alert
-                    </button>
-                  </div>
-                </div>
+                        <div className="flex flex-col sm:flex-row items-center gap-4 w-full justify-center">
+                          <a 
+                            href="https://github.com/Agent-Field/sec-af" 
+                            target="_blank" 
+                            rel="noreferrer"
+                            className={`flex items-center space-x-1.5 text-xs font-bold hover:underline focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:outline-none rounded ${
+                              isHighContrast ? 'text-white' : 'text-rose-400 hover:text-rose-350'
+                            }`}
+                          >
+                            <span>Audited by Agentfield sec-af</span>
+                            <ExternalLink className="h-3.5 w-3.5" />
+                          </a>
+                          <span className={`${isHighContrast ? 'text-white' : 'text-slate-800'} hidden sm:inline`}>|</span>
+                          <button
+                            onClick={() => setScoringError(null)}
+                            className={`text-xs font-semibold cursor-pointer transition duration-200 focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:outline-none rounded ${
+                              isHighContrast 
+                                ? 'bg-black text-white border-2 border-white hover:bg-gray-900 py-1.5 px-4 rounded-full' 
+                                : 'text-slate-450 hover:text-white bg-slate-900 hover:bg-slate-800 border border-slate-800 px-4 py-1.5 rounded-lg'
+                            }`}
+                          >
+                            Clear Threat Alert
+                          </button>
+                        </div>
+                      </div>
+                    );
+                  } else {
+                    return (
+                      /* Connection Offline Panel */
+                      <div 
+                        tabIndex={0}
+                        className={`rounded-3xl p-8 border relative overflow-hidden text-center flex flex-col items-center justify-center min-h-[400px] shadow-2xl transition-all duration-350 ${
+                          isHighContrast 
+                            ? 'bg-black border-white border-2 text-white font-bold' 
+                            : 'glass-panel border-amber-500/25 bg-[#16120a]/30 text-slate-200'
+                        }`}
+                      >
+                        {!isHighContrast && (
+                          <div className="absolute right-0 top-0 w-64 h-64 bg-amber-600/5 rounded-full filter blur-3xl pointer-events-none animate-pulse"></div>
+                        )}
+
+                        <div className={`border p-4 rounded-full mb-5 ${
+                          isHighContrast 
+                            ? 'border-white text-white bg-black' 
+                            : 'bg-amber-500/10 border-amber-500/20 text-amber-400'
+                        }`}>
+                          <WifiOff className="h-9 w-9 text-current" />
+                        </div>
+
+                        <h3 className={`text-md font-extrabold mb-2 tracking-wide uppercase ${isHighContrast ? 'text-white font-black' : 'text-white'}`}>
+                          API Server Unreachable
+                        </h3>
+                        <p className={`text-xs max-w-md mb-6 leading-relaxed ${isHighContrast ? 'text-white font-bold' : 'text-slate-400'}`}>
+                          The underwriting console could not establish a connection to the credit scoring engine. Please verify that your local backend server is running.
+                        </p>
+
+                        <div className={`border rounded-2xl p-5 w-full max-w-lg text-left space-y-3 mb-6 font-mono text-[10.5px] leading-relaxed ${
+                          isHighContrast ? 'bg-black border-white border-2 text-white' : 'bg-[#0a0807] border-amber-500/10'
+                        }`}>
+                          <div className="flex items-start justify-between gap-4">
+                            <span className="text-slate-500 font-bold shrink-0">Server Endpoint:</span>
+                            <span className="font-semibold text-slate-300">{API_BASE_URL}</span>
+                          </div>
+                          <div className="flex items-start justify-between gap-4">
+                            <span className="text-slate-500 font-bold shrink-0">Error Details:</span>
+                            <span className="text-amber-300">{scoringError}</span>
+                          </div>
+                          <div className="flex items-start justify-between gap-4">
+                            <span className="text-slate-500 font-bold shrink-0">Resolution:</span>
+                            <span className="text-slate-400 leading-normal">
+                              Verify that you launched the application stack by double-clicking <code className="bg-slate-950 px-1 py-0.5 rounded text-white border border-slate-900">run.bat</code> or executing <code className="bg-slate-950 px-1 py-0.5 rounded text-white border border-slate-900">start.ps1</code> in the project root.
+                            </span>
+                          </div>
+                        </div>
+
+                        <div className="flex items-center space-x-4">
+                          <button
+                            onClick={() => setScoringError(null)}
+                            className={`text-xs font-semibold cursor-pointer transition duration-200 focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:outline-none rounded ${
+                              isHighContrast 
+                                ? 'bg-white text-black border-2 border-black hover:bg-gray-100 py-1.5 px-4 rounded-full' 
+                                : 'text-slate-200 hover:text-white bg-indigo-600 hover:bg-indigo-500 px-5 py-2 rounded-xl shadow-md shadow-indigo-600/10'
+                            }`}
+                          >
+                            Dismiss & Retry
+                          </button>
+                        </div>
+                      </div>
+                    );
+                  }
+                })()
               ) : scoringResult ? (
                 <div className="space-y-6">
                   {publishState !== 'locked' ? (
                     <div 
                       tabIndex={0}
-                      className={`rounded-2xl p-8 border flex flex-col md:flex-row md:items-center justify-between gap-8 ${
-                        isHighContrast ? 'bg-black border-white border-2' : 'glass-panel border-gray-800'
+                      className={`rounded-3xl p-8 border flex flex-col md:flex-row md:items-center justify-between gap-8 ${
+                        isHighContrast ? 'bg-black border-white border-2' : 'glass-panel border-slate-900 shadow-xl'
                       }`}
                     >
                       {/* Circular Gauge */}
                       <div className="flex flex-col items-center text-center shrink-0 w-full md:w-96">
-                        <span className="text-xs font-bold text-gray-500 uppercase tracking-widest mb-4">Underwriting Score & Limits</span>
+                        <span className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-4">Underwriting Score & Assigned Credit</span>
                         
                         <div className="flex flex-col sm:flex-row items-center justify-center gap-6 w-full mb-4">
                           {/* Circular Gauge */}
@@ -1076,8 +1181,8 @@ function App() {
                                 cx="80"
                                 cy="80"
                                 r="68"
-                                className="stroke-gray-800"
-                                strokeWidth={isHighContrast ? "4" : "8"}
+                                className="stroke-slate-800/60"
+                                strokeWidth={isHighContrast ? "4" : "7"}
                                 strokeDasharray={isHighContrast ? "4,4" : "none"}
                                 fill="transparent"
                               />
@@ -1086,7 +1191,7 @@ function App() {
                                 cy="80"
                                 r="68"
                                 stroke={getScoreColor(scoringResult.merchant_score).fill}
-                                strokeWidth={isHighContrast ? "6" : "10"}
+                                strokeWidth={isHighContrast ? "6" : "9"}
                                 fill="transparent"
                                 strokeDasharray={
                                   isHighContrast
@@ -1100,17 +1205,17 @@ function App() {
                             </svg>
                             <div className="absolute inset-0 flex flex-col items-center justify-center">
                               {scoringResult.merchant_score >= 750 ? (
-                                <CheckCircle className={`h-5 w-5 mb-1 ${isHighContrast ? 'text-white' : 'text-emerald-400'}`} />
+                                <CheckCircle className={`h-4.5 w-4.5 mb-1 ${isHighContrast ? 'text-white' : 'text-emerald-400'}`} />
                               ) : scoringResult.merchant_score >= 550 ? (
-                                <Info className={`h-5 w-5 mb-1 ${isHighContrast ? 'text-white' : 'text-amber-400'}`} />
+                                <Info className={`h-4.5 w-4.5 mb-1 ${isHighContrast ? 'text-white' : 'text-amber-400'}`} />
                               ) : (
-                                <AlertTriangle className={`h-5 w-5 mb-1 ${isHighContrast ? 'text-white' : 'text-rose-400'}`} />
+                                <AlertTriangle className={`h-4.5 w-4.5 mb-1 ${isHighContrast ? 'text-white' : 'text-rose-400'}`} />
                               )}
-                              <span className={`text-4xl font-extrabold tracking-tight ${getScoreColor(scoringResult.merchant_score).text}`}>
+                              <span className={`text-3xl font-extrabold tracking-tight ${getScoreColor(scoringResult.merchant_score).text}`}>
                                 {scoringResult.merchant_score}
                               </span>
-                              <span className="text-[9px] text-gray-400 font-bold uppercase mt-0.5">Scale 300-900</span>
-                              <span className={`text-[10px] font-black uppercase tracking-wider mt-1 ${isHighContrast ? 'text-white font-extrabold' : getScoreColor(scoringResult.merchant_score).text}`}>
+                              <span className="text-[9px] text-slate-500 font-bold uppercase mt-0.5 tracking-wider">Scale 300-900</span>
+                              <span className={`text-[9px] font-black uppercase tracking-wider mt-1 px-2 py-0.5 rounded bg-slate-900/60 ${isHighContrast ? 'text-white font-extrabold' : getScoreColor(scoringResult.merchant_score).text}`}>
                                 {scoringResult.merchant_score >= 750 ? 'Excellent' : scoringResult.merchant_score >= 650 ? 'Good' : scoringResult.merchant_score >= 550 ? 'Fair' : 'Poor'}
                               </span>
                             </div>
@@ -1119,8 +1224,8 @@ function App() {
                           {/* Category and Limit Next to Gauge */}
                           <div className="flex flex-col space-y-4 text-left">
                             <div>
-                              <span className="text-[9px] text-gray-500 uppercase tracking-widest block font-bold">Credit Worthiness</span>
-                              <span className={`text-sm font-black uppercase tracking-wide ${
+                              <span className="text-[9px] text-slate-500 uppercase tracking-widest block font-bold">Credit Tier</span>
+                              <span className={`text-xs font-extrabold uppercase tracking-wide ${
                                 scoringResult.credit_score >= 750 ? 'text-emerald-400' :
                                 scoringResult.credit_score >= 650 ? 'text-blue-400' :
                                 scoringResult.credit_score >= 550 ? 'text-amber-400' : 'text-rose-400'
@@ -1129,8 +1234,8 @@ function App() {
                               </span>
                             </div>
                             <div>
-                              <span className="text-[9px] text-gray-500 uppercase tracking-widest block font-bold">Assigned Limit</span>
-                              <span className="text-2xl font-black text-white tracking-tight">
+                              <span className="text-[9px] text-slate-500 uppercase tracking-widest block font-bold">Assigned Limit</span>
+                              <span className="text-xl font-extrabold text-white tracking-tight">
                                 ₹{(scoringResult.credit_limit || 0).toLocaleString('en-IN')}
                               </span>
                             </div>
@@ -1141,30 +1246,30 @@ function App() {
                         <div 
                           tabIndex={0}
                           className={`flex items-center justify-between border p-3 rounded-2xl w-full mb-4 ${
-                            isHighContrast ? 'bg-black border-white border-2 text-white' : 'bg-[#12141c]/50 border-gray-800'
+                            isHighContrast ? 'bg-black border-white border-2 text-white' : 'bg-[#0d101e]/60 border-slate-900 shadow-inner'
                           }`}
                         >
-                          <span className="text-[10px] font-bold text-gray-500 uppercase tracking-wider">Audio Assist:</span>
+                          <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Audio Summary:</span>
                           <div className="flex gap-2">
                             <button
                               onClick={speakAudioSummary}
                               aria-label="Listen to score and factors summary aloud"
-                              className={`py-1.5 px-3 rounded-xl flex items-center justify-center space-x-1.5 transition duration-200 cursor-pointer focus-visible:ring-4 focus-visible:ring-yellow-400 focus-visible:outline-none ${isHighContrast ? 'bg-white text-black font-black hover:bg-gray-100' : 'bg-blue-600 hover:bg-blue-500 text-white'}`}
+                              className={`py-1.5 px-3.5 rounded-xl flex items-center justify-center space-x-1.5 transition duration-200 cursor-pointer focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:outline-none ${isHighContrast ? 'bg-white text-black font-black hover:bg-gray-100' : 'bg-indigo-600 hover:bg-indigo-500 text-white shadow-md shadow-indigo-600/10'}`}
                             >
-                              <Volume2 className="h-4 w-4" />
+                              <Volume2 className="h-3.5 w-3.5" />
                               <span className="text-[10px] font-bold">Listen</span>
                             </button>
                             <button
                               onClick={() => setAudioLang(audioLang === 'en' ? 'hi' : 'en')}
                               aria-label={`Change language, current is ${audioLang === 'en' ? 'English' : 'Hindi'}`}
-                              className={`text-[10px] font-bold px-3 py-1.5 rounded-xl transition duration-200 cursor-pointer focus-visible:ring-4 focus-visible:ring-yellow-400 focus-visible:outline-none ${isHighContrast ? 'bg-black text-white border border-white hover:bg-gray-900' : 'bg-[#1b1e2b] hover:bg-gray-800 text-gray-300'}`}
+                              className={`text-[10px] font-semibold px-3 py-1.5 rounded-xl transition duration-200 cursor-pointer focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:outline-none ${isHighContrast ? 'bg-black text-white border border-white hover:bg-gray-900' : 'bg-[#181d30] hover:bg-slate-800 text-slate-350'}`}
                             >
                               {audioLang === 'en' ? 'EN' : 'HI'}
                             </button>
                           </div>
                         </div>
                         
-                        <div className={`mt-2 px-3 py-1.5 rounded-full border text-[10px] font-bold tracking-wide uppercase ${getScoreColor(scoringResult.merchant_score).bg} ${getScoreColor(scoringResult.merchant_score).border} ${getScoreColor(scoringResult.merchant_score).text}`}>
+                        <div className={`mt-2 px-3.5 py-1.5 rounded-full border text-[10px] font-bold tracking-wide uppercase ${getScoreColor(scoringResult.merchant_score).bg} ${getScoreColor(scoringResult.merchant_score).border} ${getScoreColor(scoringResult.merchant_score).text}`}>
                           {scoringResult.merchant_score >= 750 ? 'Grade: Excellent' : scoringResult.merchant_score >= 650 ? 'Grade: Good' : scoringResult.merchant_score >= 550 ? 'Grade: Fair' : 'Grade: Poor'}
                         </div>
 
@@ -1174,7 +1279,7 @@ function App() {
                       {/* SHAP Factors & Publish Action */}
                       <div className="flex-grow flex flex-col justify-between self-stretch">
                         <div>
-                          <span className="text-xs font-bold text-gray-500 uppercase tracking-widest block mb-4">Top Credit Factors</span>
+                          <span className="text-xs font-bold text-slate-400 uppercase tracking-wider block mb-4">Top Credit Factors</span>
                           <div className="space-y-3">
                             {scoringResult.top_factors.map((factor, index) => {
                               const isNegative = factor.includes("Penalty") || factor.includes("High Failure") || factor.includes("Declining");
@@ -1182,7 +1287,7 @@ function App() {
                                 <div 
                                   key={index}
                                   tabIndex={0}
-                                  className={`flex items-start space-x-3 p-3 rounded-xl border text-xs font-bold ${
+                                  className={`flex items-start space-x-3 p-3.5 rounded-2xl border text-xs font-medium ${
                                     isNegative 
                                       ? isHighContrast ? 'bg-black border-white text-white border-2 font-black' : 'bg-rose-500/5 border-rose-500/10 text-rose-300' 
                                       : isHighContrast ? 'bg-black border-white text-white border-2 font-black' : 'bg-emerald-500/5 border-emerald-500/10 text-emerald-300'
@@ -1207,14 +1312,14 @@ function App() {
                         />
 
                         {/* Actions (WhatsApp & Mint) */}
-                        <div className="mt-6 pt-6 border-t border-gray-800 flex flex-col space-y-4">
+                        <div className="mt-6 pt-6 border-t border-slate-900 flex flex-col space-y-3.5">
                           {/* Send to WhatsApp Action */}
                           <button
                             onClick={handleSendToWhatsApp}
-                            className={`flex items-center justify-center space-x-2 font-bold text-xs px-4 py-3 rounded-xl transition duration-200 hover:scale-[1.01] cursor-pointer focus-visible:ring-4 focus-visible:ring-yellow-400 focus-visible:outline-none ${
+                            className={`flex items-center justify-center space-x-2 font-bold text-xs px-4 py-3 rounded-xl transition duration-200 hover-scale cursor-pointer focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:outline-none ${
                               isHighContrast 
                                 ? 'bg-black border-2 border-white text-white hover:bg-gray-900' 
-                                : 'bg-emerald-600/10 hover:bg-emerald-600/20 text-emerald-400 border border-emerald-500/20'
+                                : 'bg-[#0d101e] hover:bg-[#13182d] text-emerald-400 border border-slate-800 hover:border-slate-700 hover:shadow-lg'
                             }`}
                           >
                             <Share2 className="h-4 w-4" />
@@ -1224,21 +1329,21 @@ function App() {
                           {/* Download PDF Certificate Action */}
                           <button
                             onClick={handleDownloadPDF}
-                            className={`flex items-center justify-center space-x-2 font-bold text-xs px-4 py-3 rounded-xl transition duration-200 hover:scale-[1.01] cursor-pointer focus-visible:ring-4 focus-visible:ring-yellow-400 focus-visible:outline-none ${
+                            className={`flex items-center justify-center space-x-2 font-bold text-xs px-4 py-3 rounded-xl transition duration-200 hover-scale cursor-pointer focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:outline-none ${
                               isHighContrast 
                                 ? 'bg-black border-2 border-white text-white hover:bg-gray-900' 
-                                : 'bg-blue-600/10 hover:bg-blue-600/20 text-blue-400 border border-blue-500/20'
+                                : 'bg-[#0d101e] hover:bg-[#13182d] text-indigo-400 border border-slate-800 hover:border-slate-700 hover:shadow-lg'
                             }`}
                           >
                             <Download className="h-4 w-4" />
                             <span>Download PDF Certificate</span>
                           </button>
 
-                          <div className="flex items-center justify-between border-t border-gray-800/50 pt-4">
+                          <div className="flex items-center justify-between border-t border-slate-900 pt-4">
                             <div className="text-left">
-                              <span className="text-[10px] text-gray-500 block">Assigned Address</span>
-                              <span className="text-xs font-mono font-bold text-gray-400">
-                                {walletConnected ? `${walletAddress.slice(0, 8)}...${walletAddress.slice(-6)}` : "Connect Wallet"}
+                              <span className="text-[10px] text-slate-500 block font-semibold tracking-wider uppercase">Merchant Wallet</span>
+                              <span className="text-xs font-mono font-bold text-slate-400">
+                                {walletConnected ? `${walletAddress.slice(0, 8)}...${walletAddress.slice(-6)}` : "Not connected"}
                               </span>
                             </div>
 
@@ -1246,62 +1351,61 @@ function App() {
                               <button
                                 onClick={handlePublishToBlockchain}
                                 disabled={!walletConnected}
-                                className={`font-semibold text-xs px-4 py-2.5 rounded-xl transition duration-200 hover:scale-[1.02] flex items-center space-x-2 cursor-pointer focus-visible:ring-4 focus-visible:ring-yellow-400 focus-visible:outline-none ${
+                                className={`font-bold text-xs px-5 py-3 rounded-xl transition duration-200 hover-scale flex items-center space-x-2 cursor-pointer focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:outline-none ${
                                   isHighContrast
                                     ? 'bg-white text-black font-black border border-black disabled:bg-gray-800 disabled:text-gray-500'
-                                    : 'bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 disabled:from-gray-800 disabled:to-gray-800 disabled:text-gray-500 disabled:cursor-not-allowed text-white shadow-md shadow-blue-500/10'
+                                    : 'bg-indigo-600 hover:bg-indigo-500 disabled:from-slate-900 disabled:to-slate-900 disabled:text-slate-550 disabled:cursor-not-allowed text-white shadow-md shadow-indigo-600/10 hover:shadow-indigo-600/20'
                                 }`}
                               >
-                                <Sparkles className="h-4 w-4" />
-                                <span>Publish to Blockchain</span>
+                                <Sparkles className="h-4 w-4 animate-pulse" />
+                                <span>Publish rating to Web3</span>
                               </button>
                             ) : (
-                              <div className="flex items-center space-x-2 bg-blue-500/10 text-blue-400 border border-blue-500/20 px-4 py-2.5 rounded-xl text-xs font-semibold">
+                              <div className="flex items-center space-x-2 bg-indigo-500/10 text-indigo-400 border border-indigo-500/20 px-4 py-2.5 rounded-xl text-xs font-semibold">
                                 <RefreshCw className="h-3.5 w-3.5 animate-spin" />
-                                <span>Starting Web3 Transaction...</span>
+                                <span>Signing Web3 Transaction...</span>
                               </div>
                             )}
                           </div>
                         </div>
                       </div>
-                    </div>
-                  ) : (
+                    </div>                  ) : (
                      /* Locked View screen */
                     <div 
                       tabIndex={0}
                       className={`rounded-3xl p-8 border relative overflow-hidden text-center flex flex-col items-center justify-center min-h-[300px] ${
-                        isHighContrast ? 'bg-black border-white border-2' : 'glass-panel border-blue-500/30 shadow-2xl'
+                        isHighContrast ? 'bg-black border-white border-2' : 'glass-panel border-indigo-500/20 shadow-2xl'
                       }`}
                     >
-                      <div className="absolute right-0 top-0 w-48 h-48 bg-blue-600/5 rounded-full filter blur-3xl pointer-events-none"></div>
+                      <div className="absolute right-0 top-0 w-48 h-48 bg-indigo-600/5 rounded-full filter blur-3xl pointer-events-none"></div>
                       
-                      <div className={`border p-4 rounded-full mb-4 animate-bounce ${
-                        isHighContrast ? 'border-white text-white' : 'bg-blue-500/10 border-blue-500/20 text-blue-400'
+                      <div className={`border p-4 rounded-full mb-4 animate-pulse ${
+                        isHighContrast ? 'border-white text-white' : 'bg-indigo-500/10 border-indigo-500/25 text-indigo-400'
                       }`}>
-                        <Lock className="h-8 w-8" />
+                        <Lock className="h-7 w-7" />
                       </div>
 
-                      <h3 className="text-xl font-bold text-white mb-2">Score Locked on Polygon</h3>
-                      <p className="text-sm text-gray-400 max-w-md mb-6 leading-relaxed">
-                        Your credit assessment rating is cryptographically signed and published to the blockchain. Third-party underwriters can audit this directly.
+                      <h3 className="text-lg font-bold text-white mb-2 uppercase tracking-wide">Rating Sealed on Polygon</h3>
+                      <p className="text-xs text-slate-450 max-w-md mb-6 leading-relaxed">
+                        The underwriting assessment payload has been cryptographically signed and anchored. Institutions can audit this trace on-chain.
                       </p>
 
-                      <div className={`border rounded-xl p-4 w-full max-w-md text-left space-y-2 mb-6 ${
-                        isHighContrast ? 'bg-black border-white' : 'bg-[#12141c] border-gray-800'
+                      <div className={`border rounded-2xl p-4.5 w-full max-w-md text-left space-y-3 mb-6 font-mono text-[11px] ${
+                        isHighContrast ? 'bg-black border-white' : 'bg-[#0a0c16] border-slate-900'
                       }`}>
-                        <div className="flex justify-between text-xs">
-                          <span className="text-gray-500 font-bold">Subject Address:</span>
-                          <span className="font-mono text-gray-300">{walletAddress}</span>
+                        <div className="flex justify-between gap-4">
+                          <span className="text-slate-500 font-bold">Subject:</span>
+                          <span className="text-slate-300 truncate max-w-[200px]" title={walletAddress}>{walletAddress}</span>
                         </div>
-                        <div className="flex justify-between text-xs">
-                          <span className="text-gray-500 font-bold">On-Chain Score:</span>
-                          <span className={`font-bold ${isHighContrast ? 'text-white' : 'text-blue-400'}`}>
-                            {scoringResult.merchant_score}
+                        <div className="flex justify-between gap-4">
+                          <span className="text-slate-500 font-bold">On-Chain Score:</span>
+                          <span className={`font-bold ${isHighContrast ? 'text-white' : 'text-indigo-400'}`}>
+                            {scoringResult.merchant_score} / 900
                           </span>
                         </div>
-                        <div className="flex justify-between text-xs">
-                          <span className="text-gray-500 font-bold">Transaction Hash:</span>
-                          <span className="font-mono text-gray-400 truncate max-w-[200px]" title={dummyTxHash}>
+                        <div className="flex justify-between gap-4">
+                          <span className="text-slate-500 font-bold">Ledger Txn:</span>
+                          <span className="font-mono text-slate-400 truncate max-w-[200px]" title={dummyTxHash}>
                             {dummyTxHash}
                           </span>
                         </div>
@@ -1309,10 +1413,10 @@ function App() {
 
                       <button
                         onClick={handleDownloadPDF}
-                        className={`mb-6 w-full max-w-md flex items-center justify-center space-x-2 font-bold text-xs px-4 py-3 rounded-xl transition duration-200 hover:scale-[1.01] cursor-pointer focus-visible:ring-4 focus-visible:ring-yellow-400 focus-visible:outline-none ${
+                        className={`mb-6 w-full max-w-md flex items-center justify-center space-x-2 font-bold text-xs px-4 py-3.5 rounded-xl transition duration-200 hover-scale cursor-pointer focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:outline-none ${
                           isHighContrast
                             ? 'bg-white text-black border border-black font-black hover:bg-gray-100'
-                            : 'bg-blue-600 hover:bg-blue-500 text-white shadow-md shadow-blue-500/10'
+                            : 'bg-indigo-600 hover:bg-indigo-500 text-white shadow-md shadow-indigo-600/10'
                         }`}
                       >
                         <Download className="h-4 w-4" />
@@ -1324,15 +1428,15 @@ function App() {
                           href={`https://polygonscan.com/tx/${dummyTxHash}`}
                           target="_blank" 
                           rel="noreferrer"
-                          className="flex items-center space-x-1.5 text-xs text-blue-400 hover:text-blue-300 font-bold hover:underline focus-visible:ring-4 focus-visible:ring-yellow-400 focus-visible:outline-none rounded"
+                          className="flex items-center space-x-1.5 text-xs text-indigo-400 hover:text-indigo-300 font-bold hover:underline focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:outline-none rounded"
                         >
                           <span>Verify on Polygonscan</span>
                           <ExternalLink className="h-3.5 w-3.5" />
                         </a>
-                        <span className="text-gray-600">|</span>
+                        <span className="text-slate-800">|</span>
                         <button
                           onClick={() => setPublishState('idle')}
-                          className="text-xs text-gray-400 hover:text-gray-200 font-bold cursor-pointer focus-visible:ring-4 focus-visible:ring-yellow-400 focus-visible:outline-none rounded"
+                          className="text-xs text-slate-400 hover:text-white font-bold cursor-pointer focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:outline-none rounded"
                         >
                           Run Another Assessment
                         </button>
@@ -1344,13 +1448,13 @@ function App() {
                 <div 
                   tabIndex={0}
                   className={`rounded-2xl p-16 text-center border-dashed flex flex-col items-center justify-center min-h-[300px] ${
-                    isHighContrast ? 'bg-black border-white border-2' : 'glass-panel border-gray-800/80'
+                    isHighContrast ? 'bg-black border-white border-2' : 'glass-panel border-slate-900/60'
                   }`}
                 >
-                  <Shield className="h-12 w-12 text-gray-600 mb-4 animate-pulse" />
-                  <h3 className="text-md font-bold text-gray-300">No Assessment Data</h3>
-                  <p className="text-xs text-gray-500 max-w-sm mt-2 leading-relaxed">
-                    Upload a Paytm transaction CSV statement on the left to evaluate metrics and unlock your decentralized credit rating.
+                  <Shield className="h-10 w-10 text-slate-700 mb-4 animate-pulse" />
+                  <h3 className="text-xs font-bold text-slate-400 uppercase tracking-wider">Awaiting Evaluation Payload</h3>
+                  <p className="text-[11px] text-slate-500 max-w-xs mt-2 leading-relaxed font-medium">
+                    Upload a transaction ledger statement to trigger underwriting math and generate a Web3 rating credential.
                   </p>
                 </div>
               )}
@@ -1363,12 +1467,12 @@ function App() {
             <div 
               tabIndex={0}
               className={`rounded-2xl p-8 border ${
-                isHighContrast ? 'bg-black border-white border-2' : 'glass-panel border-gray-800'
+                isHighContrast ? 'bg-black border-white border-2' : 'glass-panel border-slate-900 shadow-xl'
               }`}
             >
-              <h3 className="text-lg font-bold text-white mb-2">Audit Ledger Credentials</h3>
-              <p className="text-sm text-gray-400 mb-6 leading-relaxed">
-                Enter the merchant's wallet address to retrieve and verify their cryptographic credit history directly from the Polygon network.
+              <h3 className="text-md font-bold text-white uppercase tracking-wider mb-2">Audit Ledger Credentials</h3>
+              <p className="text-xs text-slate-450 mb-6 leading-relaxed">
+                Query Polygon mainnet ledgers by entering a merchant address to verify attested transaction histories.
               </p>
 
               <form onSubmit={handleLenderVerify} className="flex flex-col sm:flex-row gap-4">
@@ -1377,19 +1481,19 @@ function App() {
                   placeholder="Enter Merchant Wallet Address (0x...)"
                   value={searchAddress}
                   onChange={(e) => setSearchAddress(e.target.value)}
-                  className={`flex-grow rounded-xl px-4 py-3 text-sm font-mono text-white placeholder-gray-600 focus:outline-none focus:border-blue-500 transition duration-200 focus-visible:ring-4 focus-visible:ring-yellow-400 ${
-                    isHighContrast ? 'bg-black border-2 border-white' : 'bg-[#12141c] border border-gray-800'
+                  className={`flex-grow rounded-xl px-4 py-3 text-xs font-mono text-white placeholder-slate-600 focus:outline-none focus:border-indigo-500 transition duration-200 focus-visible:ring-2 focus-visible:ring-indigo-500 ${
+                    isHighContrast ? 'bg-black border-2 border-white' : 'bg-[#0a0c16] border border-slate-900'
                   }`}
                 />
                 <button
                   type="submit"
-                  className={`font-bold text-sm px-6 py-3 rounded-xl transition duration-200 shrink-0 cursor-pointer focus-visible:ring-4 focus-visible:ring-yellow-400 focus-visible:outline-none ${
+                  className={`font-bold text-xs px-6 py-3 rounded-xl transition duration-200 hover-scale shrink-0 cursor-pointer focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:outline-none ${
                     isHighContrast
                       ? 'bg-white text-black font-black border border-black'
-                      : 'bg-blue-600 hover:bg-blue-500 text-white shadow-md shadow-blue-500/10'
+                      : 'bg-indigo-600 hover:bg-indigo-500 text-white shadow-md shadow-indigo-600/10'
                   }`}
                 >
-                  Verify Ledger
+                  Verify Credentials
                 </button>
               </form>
 
@@ -1418,42 +1522,41 @@ function App() {
 
               return (
                 <div className="space-y-6 w-full">
-                  <div 
-                    tabIndex={0}
+                  <div                     tabIndex={0}
                     className={`rounded-3xl p-8 border relative overflow-hidden shadow-xl ${
-                      isHighContrast ? 'bg-black border-white border-2' : 'glass-panel border-blue-500/20'
+                      isHighContrast ? 'bg-black border-white border-2' : 'glass-panel border-slate-900'
                     }`}
                   >
                   
                   {/* Visual Header */}
-                  <div className="flex items-start justify-between border-b border-gray-800 pb-6 mb-6">
+                  <div className="flex items-start justify-between border-b border-slate-900/60 pb-6 mb-6">
                     <div>
-                      <div className="flex items-center space-x-2 text-blue-400 mb-1">
-                        <Check className="h-4 w-4 bg-blue-500/10 p-0.5 rounded-full" />
-                        <span className="text-[10px] font-bold uppercase tracking-widest">Protocol Verified Ledger</span>
+                      <div className="flex items-center space-x-2 text-indigo-400 mb-1">
+                        <Check className="h-4 w-4 bg-indigo-500/10 p-0.5 rounded-full" />
+                        <span className="text-[10px] font-bold uppercase tracking-wider">Protocol Attested Ledger</span>
                       </div>
-                      <h3 className="text-md font-bold text-gray-200">Merchant Credit Report</h3>
+                      <h3 className="text-md font-bold text-white uppercase tracking-wider">Merchant Credit Report</h3>
                     </div>
                     <div className="bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 px-3 py-1 rounded-full text-[10px] font-bold tracking-widest uppercase">
-                      Verification: Valid
+                      VERDICT: SECURE ✓
                     </div>
                   </div>
 
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-8">
                     <div>
-                      <span className="text-xs text-gray-500 uppercase tracking-wider block mb-1">Attested Credit Score</span>
+                      <span className="text-[10px] text-slate-500 uppercase tracking-wider block mb-1 font-bold">Attested Credit Score</span>
                       <div className="flex items-baseline space-x-2">
                         <span className={`text-4xl font-extrabold ${isHighContrast ? 'text-white' : 'text-emerald-400'}`}>
                           {lenderSearchResult.currentScore}
                         </span>
-                        <span className={`text-xs font-semibold ${
+                        <span className={`text-xs font-bold ${
                           lenderSearchResult.currentScore >= 750 
-                            ? (isHighContrast ? 'text-white' : 'text-emerald-500') 
+                            ? (isHighContrast ? 'text-white' : 'text-emerald-400') 
                             : lenderSearchResult.currentScore >= 650
-                              ? (isHighContrast ? 'text-white' : 'text-blue-500')
+                              ? (isHighContrast ? 'text-white' : 'text-indigo-400')
                               : lenderSearchResult.currentScore >= 550 
-                                ? (isHighContrast ? 'text-white' : 'text-amber-500') 
-                                : (isHighContrast ? 'text-white' : 'text-rose-500')
+                                ? (isHighContrast ? 'text-white' : 'text-amber-400') 
+                                : (isHighContrast ? 'text-white' : 'text-rose-455')
                         }`}>
                           {lenderSearchResult.currentScore >= 750 
                             ? 'Prime Grade (Excellent)' 
@@ -1466,32 +1569,32 @@ function App() {
                       </div>
                     </div>
                     <div>
-                      <span className="text-xs text-gray-500 uppercase tracking-wider block mb-1">Node Issuer ID</span>
-                      <span className="text-sm font-semibold text-gray-300 font-mono">{lenderSearchResult.issuer}</span>
+                      <span className="text-[10px] text-slate-500 uppercase tracking-wider block mb-1 font-bold">Attestation Authority</span>
+                      <span className="text-xs font-semibold text-slate-350 font-mono">{lenderSearchResult.issuer}</span>
                     </div>
                   </div>
 
                   {/* SVG Line Chart */}
                   <div className="mb-6">
-                    <span className="text-xs font-bold text-gray-500 uppercase tracking-widest block mb-4">Historical Rating Trend (6 Months)</span>
+                    <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-4">Historical Rating Trend (6 Months)</span>
                     <div 
                       tabIndex={0}
                       className={`border rounded-2xl p-4 flex flex-col items-center ${
-                        isHighContrast ? 'bg-black border-2 border-white' : 'bg-[#0b0c10] border-gray-900'
+                        isHighContrast ? 'bg-black border-2 border-white' : 'bg-[#05070e] border-slate-900 shadow-inner'
                       }`}
                     >
                       <svg viewBox="0 0 500 200" className="w-full max-w-[450px]">
                         {/* Grid Lines */}
-                        <line x1="40" y1="30" x2="460" y2="30" stroke={isHighContrast ? "#ffffff" : "#1f2937"} strokeWidth="1" strokeDasharray="4" />
-                        <line x1="40" y1="85" x2="460" y2="85" stroke={isHighContrast ? "#ffffff" : "#1f2937"} strokeWidth="1" strokeDasharray="4" />
-                        <line x1="40" y1="140" x2="460" y2="140" stroke={isHighContrast ? "#ffffff" : "#1f2937"} strokeWidth="1" strokeDasharray="4" />
+                        <line x1="40" y1="30" x2="460" y2="30" stroke={isHighContrast ? "#ffffff" : "rgba(255,255,255,0.02)"} strokeWidth="1" strokeDasharray="4" />
+                        <line x1="40" y1="85" x2="460" y2="85" stroke={isHighContrast ? "#ffffff" : "rgba(255,255,255,0.02)"} strokeWidth="1" strokeDasharray="4" />
+                        <line x1="40" y1="140" x2="460" y2="140" stroke={isHighContrast ? "#ffffff" : "rgba(255,255,255,0.02)"} strokeWidth="1" strokeDasharray="4" />
                         
                         {/* Gradients */}
                         {!isHighContrast && (
                           <defs>
                             <linearGradient id="chartGradient" x1="0" y1="0" x2="0" y2="1">
-                              <stop offset="0%" stopColor="#3b82f6" stopOpacity="0.4" />
-                              <stop offset="100%" stopColor="#3b82f6" stopOpacity="0.0" />
+                              <stop offset="0%" stopColor="#6366f1" stopOpacity="0.3" />
+                              <stop offset="100%" stopColor="#6366f1" stopOpacity="0.0" />
                             </linearGradient>
                           </defs>
                         )}
@@ -1508,45 +1611,45 @@ function App() {
                         <path 
                           d={`M 40 ${y0} C 90 ${y0}, 90 ${y1}, 120 ${y1} C 170 ${y1}, 170 ${y2}, 200 ${y2} C 250 ${y2}, 250 ${y3}, 280 ${y3} C 330 ${y3}, 330 ${y4}, 360 ${y4} C 410 ${y4}, 410 ${y5}, 440 ${y5}`} 
                           fill="none" 
-                          stroke={isHighContrast ? "#ffffff" : "#3b82f6"} 
-                          strokeWidth="3.5" 
+                          stroke={isHighContrast ? "#ffffff" : "#6366f1"} 
+                          strokeWidth="3" 
                           strokeLinecap="round"
                         />
 
                         {/* Data Dots & Labels */}
-                        <circle cx="40" cy={y0} r="5" fill={isHighContrast ? "#ffffff" : "#3b82f6"} stroke="#08090c" strokeWidth="2" />
-                        <text x="40" y="190" fill={isHighContrast ? "#ffffff" : "#9ca3af"} fontSize="10" textAnchor="middle" fontWeight={isHighContrast ? "bold" : "normal"}>Jan</text>
-                        <text x="40" y={y0 - 15} fill={isHighContrast ? "#ffffff" : "#3b82f6"} fontSize="10" textAnchor="middle" fontWeight="bold">
+                        <circle cx="40" cy={y0} r="4" fill={isHighContrast ? "#ffffff" : "#6366f1"} stroke="#060813" strokeWidth="2" />
+                        <text x="40" y="190" fill={isHighContrast ? "#ffffff" : "#64748b"} fontSize="9.5" textAnchor="middle" fontWeight="bold">Jan</text>
+                        <text x="40" y={y0 - 13} fill={isHighContrast ? "#ffffff" : "#6366f1"} fontSize="9.5" textAnchor="middle" fontWeight="bold">
                           {lenderSearchResult.history?.[0]?.score || 810}
                         </text>
 
-                        <circle cx="120" cy={y1} r="5" fill={isHighContrast ? "#ffffff" : "#3b82f6"} stroke="#08090c" strokeWidth="2" />
-                        <text x="120" y="190" fill={isHighContrast ? "#ffffff" : "#9ca3af"} fontSize="10" textAnchor="middle" fontWeight={isHighContrast ? "bold" : "normal"}>Feb</text>
-                        <text x="120" y={y1 - 15} fill={isHighContrast ? "#ffffff" : "#3b82f6"} fontSize="10" textAnchor="middle" fontWeight="bold">
+                        <circle cx="120" cy={y1} r="4" fill={isHighContrast ? "#ffffff" : "#6366f1"} stroke="#060813" strokeWidth="2" />
+                        <text x="120" y="190" fill={isHighContrast ? "#ffffff" : "#64748b"} fontSize="9.5" textAnchor="middle" fontWeight="bold">Feb</text>
+                        <text x="120" y={y1 - 13} fill={isHighContrast ? "#ffffff" : "#6366f1"} fontSize="9.5" textAnchor="middle" fontWeight="bold">
                           {lenderSearchResult.history?.[1]?.score || 822}
                         </text>
 
-                        <circle cx="200" cy={y2} r="5" fill={isHighContrast ? "#ffffff" : "#3b82f6"} stroke="#08090c" strokeWidth="2" />
-                        <text x="200" y="190" fill={isHighContrast ? "#ffffff" : "#9ca3af"} fontSize="10" textAnchor="middle" fontWeight={isHighContrast ? "bold" : "normal"}>Mar</text>
-                        <text x="200" y={y2 - 15} fill={isHighContrast ? "#ffffff" : "#3b82f6"} fontSize="10" textAnchor="middle" fontWeight="bold">
+                        <circle cx="200" cy={y2} r="4" fill={isHighContrast ? "#ffffff" : "#6366f1"} stroke="#060813" strokeWidth="2" />
+                        <text x="200" y="190" fill={isHighContrast ? "#ffffff" : "#64748b"} fontSize="9.5" textAnchor="middle" fontWeight="bold">Mar</text>
+                        <text x="200" y={y2 - 13} fill={isHighContrast ? "#ffffff" : "#6366f1"} fontSize="9.5" textAnchor="middle" fontWeight="bold">
                           {lenderSearchResult.history?.[2]?.score || 816}
                         </text>
 
-                        <circle cx="280" cy={y3} r="5" fill={isHighContrast ? "#ffffff" : "#3b82f6"} stroke="#08090c" strokeWidth="2" />
-                        <text x="280" y="190" fill={isHighContrast ? "#ffffff" : "#9ca3af"} fontSize="10" textAnchor="middle" fontWeight={isHighContrast ? "bold" : "normal"}>Apr</text>
-                        <text x="280" y={y3 - 15} fill={isHighContrast ? "#ffffff" : "#3b82f6"} fontSize="10" textAnchor="middle" fontWeight="bold">
+                        <circle cx="280" cy={y3} r="4" fill={isHighContrast ? "#ffffff" : "#6366f1"} stroke="#060813" strokeWidth="2" />
+                        <text x="280" y="190" fill={isHighContrast ? "#ffffff" : "#64748b"} fontSize="9.5" textAnchor="middle" fontWeight="bold">Apr</text>
+                        <text x="280" y={y3 - 13} fill={isHighContrast ? "#ffffff" : "#6366f1"} fontSize="9.5" textAnchor="middle" fontWeight="bold">
                           {lenderSearchResult.history?.[3]?.score || 834}
                         </text>
 
-                        <circle cx="360" cy={y4} r="5" fill={isHighContrast ? "#ffffff" : "#3b82f6"} stroke="#08090c" strokeWidth="2" />
-                        <text x="360" y="190" fill={isHighContrast ? "#ffffff" : "#9ca3af"} fontSize="10" textAnchor="middle" fontWeight={isHighContrast ? "bold" : "normal"}>May</text>
-                        <text x="360" y={y4 - 15} fill={isHighContrast ? "#ffffff" : "#3b82f6"} fontSize="10" textAnchor="middle" fontWeight="bold">
+                        <circle cx="360" cy={y4} r="4" fill={isHighContrast ? "#ffffff" : "#6366f1"} stroke="#060813" strokeWidth="2" />
+                        <text x="360" y="190" fill={isHighContrast ? "#ffffff" : "#64748b"} fontSize="9.5" textAnchor="middle" fontWeight="bold">May</text>
+                        <text x="360" y={y4 - 13} fill={isHighContrast ? "#ffffff" : "#6366f1"} fontSize="9.5" textAnchor="middle" fontWeight="bold">
                           {lenderSearchResult.history?.[4]?.score || 846}
                         </text>
 
-                        <circle cx="440" cy={y5} r="5" fill={isHighContrast ? "#ffffff" : (lenderSearchResult.currentScore >= 750 ? "#10b981" : lenderSearchResult.currentScore >= 650 ? "#3b82f6" : lenderSearchResult.currentScore >= 550 ? "#f59e0b" : "#f43f5e")} stroke="#08090c" strokeWidth="2" />
-                        <text x="440" y="190" fill={isHighContrast ? "#ffffff" : "#9ca3af"} fontSize="10" textAnchor="middle" fontWeight={isHighContrast ? "bold" : "normal"}>Jun</text>
-                        <text x="440" y={y5 - 15} fill={isHighContrast ? "#ffffff" : (lenderSearchResult.currentScore >= 750 ? "#10b981" : lenderSearchResult.currentScore >= 650 ? "#3b82f6" : lenderSearchResult.currentScore >= 550 ? "#f59e0b" : "#f43f5e")} fontSize="10" textAnchor="middle" fontWeight="bold">
+                        <circle cx="440" cy={y5} r="4" fill={isHighContrast ? "#ffffff" : (lenderSearchResult.currentScore >= 750 ? "#10b981" : lenderSearchResult.currentScore >= 650 ? "#6366f1" : lenderSearchResult.currentScore >= 550 ? "#f59e0b" : "#f43f5e")} stroke="#060813" strokeWidth="2" />
+                        <text x="440" y="190" fill={isHighContrast ? "#ffffff" : "#64748b"} fontSize="9.5" textAnchor="middle" fontWeight="bold">Jun</text>
+                        <text x="440" y={y5 - 13} fill={isHighContrast ? "#ffffff" : (lenderSearchResult.currentScore >= 750 ? "#10b981" : lenderSearchResult.currentScore >= 650 ? "#6366f1" : lenderSearchResult.currentScore >= 550 ? "#f59e0b" : "#f43f5e")} fontSize="9.5" textAnchor="middle" fontWeight="bold">
                           {lenderSearchResult.currentScore}
                         </text>
                       </svg>
@@ -1555,12 +1658,12 @@ function App() {
 
                   {/* Verification metadata details */}
 
-                  <div className="border-t border-gray-800 pt-6 flex flex-col sm:flex-row items-center justify-between text-xs text-gray-500 gap-4">
+                  <div className="border-t border-slate-900 pt-6 flex flex-col sm:flex-row items-center justify-between text-xs text-slate-500 gap-4">
                     <div className="flex items-center space-x-2">
                       <Calendar className="h-4 w-4" />
                       <span>Last audited: Just now</span>
                     </div>
-                    <span className="font-mono text-[10px]">Contract: {contractInfo?.address || "0x5FbDB2315678afecb367f032d93F642f64180aa3"} (Local Testnet)</span>
+                    <span className="font-mono text-[9px] tracking-wider text-slate-400">Node: {contractInfo?.address ? `${contractInfo.address.slice(0, 10)}...${contractInfo.address.slice(-8)}` : "0x5FbDB2315678afecb367f032d93F642f64180aa3"}</span>
                   </div>
                 </div>
                 <LoanOfferPanel 
@@ -1575,11 +1678,11 @@ function App() {
 
             {hasSearched && lenderSearchError && (
               <div className={`rounded-2xl p-6 border text-center flex flex-col items-center justify-center space-y-3 ${
-                isHighContrast ? 'bg-black border-white border-2 text-white' : 'border-rose-500/20 bg-rose-500/5 text-rose-300'
+                isHighContrast ? 'bg-black border-white border-2 text-white' : 'border-rose-500/15 bg-rose-500/5 text-rose-400'
               }`}>
                 <AlertTriangle className="h-8 w-8 text-rose-500 animate-pulse" />
-                <h4 className="text-sm font-bold text-gray-200">Verification Failed</h4>
-                <p className="text-xs max-w-md leading-relaxed">
+                <h4 className="text-xs font-bold uppercase tracking-wider text-slate-200">Verification Failure</h4>
+                <p className="text-xs max-w-md leading-relaxed text-slate-400">
                   {lenderSearchError}
                 </p>
               </div>
@@ -1589,19 +1692,19 @@ function App() {
             <div 
               tabIndex={0}
               className={`rounded-2xl p-8 border text-left ${
-                isHighContrast ? 'bg-black border-white border-2 text-white' : 'glass-panel border-gray-800'
+                isHighContrast ? 'bg-black border-white border-2 text-white' : 'glass-panel border-slate-900 shadow-xl'
               }`}
             >
-              <div className="flex items-center space-x-2 mb-3">
-                <Shield className={`h-5 w-5 ${isHighContrast ? 'text-white' : 'text-blue-400'}`} />
-                <h4 className="text-md font-bold text-white">How to Verify Independently</h4>
+              <div className="flex items-center space-x-2.5 mb-3 border-b border-slate-900 pb-3">
+                <Shield className={`h-5 w-5 ${isHighContrast ? 'text-white' : 'text-indigo-400'}`} />
+                <h4 className="text-xs font-bold text-white uppercase tracking-wider">Independent Verification Guide</h4>
               </div>
-              <p className="text-sm text-gray-400 leading-relaxed mb-4">
+              <p className="text-xs text-slate-400 leading-relaxed mb-4">
                 To guarantee absolute ledger authenticity and prove the rating has not been manipulated, banks can verify the transaction record directly on the public network explorer:
               </p>
-              <ol className="list-decimal list-inside space-y-2 text-xs text-gray-400 leading-relaxed">
-                <li>Copy the unique <span className="font-semibold text-gray-300">ledger transaction hash</span> from the merchant's report or certificate.</li>
-                <li>Go to the official public block explorer (e.g., <a href="https://polygonscan.com" target="_blank" rel="noreferrer" className="text-blue-400 hover:underline font-bold">Polygonscan.com</a>).</li>
+              <ol className="list-decimal list-inside space-y-2 text-xs text-slate-450 leading-relaxed font-medium">
+                <li>Copy the unique <span className="font-semibold text-slate-200">ledger transaction hash</span> from the merchant's report or certificate.</li>
+                <li>Go to the official public block explorer (e.g., <a href="https://polygonscan.com" target="_blank" rel="noreferrer" className="text-indigo-400 hover:text-indigo-300 font-bold underline">Polygonscan.com</a>).</li>
                 <li>Paste the transaction hash or contract address into the explorer's search field.</li>
                 <li>Inspect the transaction state, the signed event logs, and the parameters (such as address and score) to cryptographically prove that the score has not been altered or tampered with.</li>
               </ol>
