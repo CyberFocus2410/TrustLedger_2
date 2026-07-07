@@ -255,7 +255,9 @@ const parseAndScoreCSVSimulated = (csvText) => {
   };
 };
 
-const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://127.0.0.1:8000';
+const getApiBaseUrl = () => {
+  return localStorage.getItem('TRUSTLEDGER_API_URL') || import.meta.env.VITE_API_URL || 'http://127.0.0.1:8000';
+};
 const DEFAULT_DEMO_WALLET = '0x71C7656EC7ab88b098defB751B7401B5f6d8976F';
 
 function App() {
@@ -277,6 +279,9 @@ function App() {
   const [publishState, setPublishState] = useState('idle'); // 'idle' | 'publishing' | 'locked'
   const [dummyTxHash, setDummyTxHash] = useState('');
   const [isSimulatedScore, setIsSimulatedScore] = useState(false);
+  const [apiGatewayInput, setApiGatewayInput] = useState(() => {
+    return localStorage.getItem('TRUSTLEDGER_API_URL') || import.meta.env.VITE_API_URL || 'http://127.0.0.1:8000';
+  });
   
   // Loan Offers State for Merchant Dashboard
   const [loanOffers, setLoanOffers] = useState([]);
@@ -294,7 +299,7 @@ function App() {
     if (!address) return;
     setLoadingOffers(true);
     try {
-      const response = await fetch(`${API_BASE_URL}/api/loan/offers?merchant=${address}`);
+      const response = await fetch(`${getApiBaseUrl()}/api/loan/offers?merchant=${address}`);
       if (response.ok) {
         const data = await response.json();
         setLoanOffers(data.offers || []);
@@ -309,7 +314,7 @@ function App() {
   const handleLoanOfferAction = async (offerId, action) => {
     const address = walletConnected ? walletAddress : DEFAULT_DEMO_WALLET;
     try {
-      const response = await fetch(`${API_BASE_URL}/api/loan/action`, {
+      const response = await fetch(`${getApiBaseUrl()}/api/loan/action`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -420,7 +425,7 @@ function App() {
     formData.append('file', file);
 
     try {
-      const response = await fetch(`${API_BASE_URL}/api/score/calculate`, {
+      const response = await fetch(`${getApiBaseUrl()}/api/score/calculate`, {
         method: 'POST',
         body: formData,
       });
@@ -478,7 +483,7 @@ function App() {
     setIsSimulatedScore(false);
 
     try {
-      const response = await fetch(`${API_BASE_URL}/api/score/preset?profile=${profileName}`);
+      const response = await fetch(`${getApiBaseUrl()}/api/score/preset?profile=${profileName}`);
       if (!response.ok) {
         const errData = await response.json();
         throw new Error(errData.detail || "Failed to load preset score");
@@ -552,7 +557,7 @@ function App() {
     setPublishState('publishing');
     
     try {
-      const response = await fetch(`${API_BASE_URL}/api/score/publish`, {
+      const response = await fetch(`${getApiBaseUrl()}/api/score/publish`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -598,7 +603,7 @@ function App() {
     }
 
     try {
-      const response = await fetch(`${API_BASE_URL}/api/score/lookup?address=${searchAddress.trim()}`);
+      const response = await fetch(`${getApiBaseUrl()}/api/score/lookup?address=${searchAddress.trim()}`);
       if (!response.ok) {
         const errData = await response.json();
         throw new Error(errData.detail || "Merchant credit record not found on-chain.");
@@ -975,6 +980,28 @@ function App() {
           </button>
 
           <div className="flex items-center space-x-4">
+            {/* Dynamic API Configuration Settings */}
+            <div className="flex items-center space-x-2">
+              <span className={`text-[9px] uppercase font-bold tracking-wider hidden lg:inline ${
+                isHighContrast ? 'text-white' : 'text-slate-500'
+              }`}>API Gateway:</span>
+              <input
+                type="text"
+                value={apiGatewayInput}
+                onChange={(e) => {
+                  const val = e.target.value;
+                  setApiGatewayInput(val);
+                  localStorage.setItem('TRUSTLEDGER_API_URL', val);
+                }}
+                placeholder="http://127.0.0.1:8000"
+                className={`text-[10.5px] font-mono rounded-xl py-1.5 px-3 w-44 focus:outline-none focus:ring-1 focus:ring-indigo-500 border ${
+                  isHighContrast 
+                    ? 'bg-black border-white text-white font-black' 
+                    : 'bg-[#0f1222]/80 border-slate-800 text-slate-300 hover:border-slate-700'
+                }`}
+              />
+            </div>
+
             {/* High-Contrast Toggler */}
             <button
               onClick={() => setIsHighContrast(!isHighContrast)}
@@ -1062,14 +1089,14 @@ function App() {
             </div>
             <button 
               onClick={() => {
-                fetch(`${API_BASE_URL}/api/health`)
+                fetch(`${getApiBaseUrl()}/api/health`)
                   .then(r => r.json())
                   .then(() => {
                     setIsSimulatedScore(false);
                     alert("Backend server connected successfully! Re-upload or load presets to use production models.");
                   })
                   .catch(() => {
-                    alert("Backend server at " + API_BASE_URL + " is still unreachable. Make sure the local python server is running.");
+                    alert("Backend server at " + getApiBaseUrl() + " is still unreachable. Make sure the backend server is running.");
                   });
               }}
               className="text-[10px] uppercase font-bold tracking-wider bg-amber-500/10 hover:bg-amber-500/20 px-3 py-1.5 rounded-lg border border-amber-500/25 transition duration-150 cursor-pointer"
@@ -1416,7 +1443,7 @@ function App() {
                         }`}>
                           <div className="flex items-start justify-between gap-4">
                             <span className="text-slate-500 font-bold shrink-0">Server Endpoint:</span>
-                            <span className="font-semibold text-slate-300">{API_BASE_URL}</span>
+                            <span className="font-semibold text-slate-300">{getApiBaseUrl()}</span>
                           </div>
                           <div className="flex items-start justify-between gap-4">
                             <span className="text-slate-500 font-bold shrink-0">Error Details:</span>
