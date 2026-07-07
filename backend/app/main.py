@@ -119,6 +119,121 @@ async def evaluate_statement_risk(metrics_summary: dict) -> AuditVerdict:
         schema=AuditVerdict
     )
     return verdict
+def parse_pdf_to_csv_bytes(pdf_bytes: bytes) -> bytes:
+    import pypdf
+    import io
+    import re
+    import hashlib
+
+    # 1. Load PDF from memory
+    try:
+        reader = pypdf.PdfReader(io.BytesIO(pdf_bytes))
+    except Exception as e:
+        raise ValueError(f"Invalid PDF statement format: {str(e)}")
+
+    # 2. Extract text from all pages
+    full_text = ""
+    for idx, page in enumerate(reader.pages):
+        text = page.extract_text()
+        if text:
+            full_text += text + "\n"
+
+    # 3. Parse lines
+    lines = full_text.split("\n")
+    
+    # Standard header fields we need to output: Date,Transaction_ID,Payer_UPI,Amount,Status,Payment_Mode
+    parsed_rows = []
+    
+    # Heuristics & Regex patterns
+    # Match standard date patterns: e.g., YYYY-MM-DD or DD-MM-YYYY or DD-MMM-YYYY (such as 25-Jun-2026)
+    date_pattern = re.compile(r'(\d{4}[-/]\d{2}[-/]\d{2}|\d{2}[-/]\d{2}[-/]\d{4}|\d{2}[-/][A-Za-z]{3,9}[-/]\d{4})')
+    time_pattern = re.compile(r'(\d{2}:\d{2}:\d{2})')
+    
+    for line in lines:
+        line_clean = line.strip()
+        if not line_clean:
+            continue
+            
+        # Search for date match
+        date_match = date_pattern.search(line_clean)
+        if not date_match:
+            continue
+            
+        date_val = date_match.group(1)
+        
+        # Search for time match (optional)
+        time_match = time_pattern.search(line_clean)
+        time_val = time_match.group(1) if time_match else "00:00:00"
+        
+        # Combine date and time
+        date_time_str = f"{date_val} {time_val}"
+        
+        # Clean line spaces
+        line_spaced = re.sub(r'\s+', ' ', line_clean)
+        tokens = line_spaced.split(' ')
+        
+        # 1. Search for Payer UPI handle (contains '@')
+        payer_upi = "unknown@upi"
+        for t in tokens:
+            if '@' in t:
+                payer_upi = t.strip(',').strip('"').strip("'")
+                break
+                
+        # 2. Search for Transaction ID
+        tx_id = ""
+        for t in tokens:
+            t_clean = t.replace('"', '').replace("'", '').strip()
+            if t_clean.startswith('PAYTM') or (t_clean.isalnum() and len(t_clean) >= 10 and t_clean.isupper() and any(c.isdigit() for c in t_clean)):
+                tx_id = t_clean
+                break
+        if not tx_id:
+            # Generate deterministic transaction ID using line contents hash
+            tx_id = "PAYTMPDF" + hashlib.md5(line_clean.encode()).hexdigest()[:8].upper()
+            
+        # 3. Search for Status
+        status = "Success"
+        for t in tokens:
+            t_lower = t.lower()
+            if "success" in t_lower:
+                status = "Success"
+                break
+            elif "fail" in t_lower or "reject" in t_lower or "declined" in t_lower or "failure" in t_lower:
+                status = "Failed"
+                break
+                
+        # 4. Search for Payment Mode
+        pay_mode = "UPI"
+        line_lower = line_clean.lower()
+        if "wallet" in line_lower:
+            pay_mode = "Wallet"
+        elif "banking" in line_lower or "net" in line_lower:
+            pay_mode = "Net Banking"
+        elif "credit" in line_lower or "card" in line_lower:
+            pay_mode = "Credit Card"
+            
+        # 5. Search for Transaction Amount
+        amount = 0.0
+        for t in tokens:
+            t_clean = t.replace('₹', '').replace('$', '').replace(',', '').strip()
+            if t_clean.startswith('-'):
+                t_clean = t_clean[1:]
+            try:
+                val = float(t_clean)
+                # Ignore values that are dates, years, time components, or too large/small
+                if val > 0.0 and t_clean not in date_val and t_clean not in time_val and len(t_clean) < 8:
+                    amount = val
+            except ValueError:
+                continue
+                
+        # Append formatted row
+        parsed_rows.append(f'"{date_time_str}","{tx_id}","{payer_upi}",{amount},"{status}","{pay_mode}"')
+        
+    if not parsed_rows:
+        raise ValueError("No valid transaction rows found in PDF statement. Please upload a standard transaction statement.")
+        
+    csv_header = "Date,Transaction_ID,Payer_UPI,Amount,Status,Payment_Mode\n"
+    csv_body = "\n".join(parsed_rows)
+    return (csv_header + csv_body).encode('utf-8')
 
 def process_scoring(csv_bytes: bytes) -> dict:
     try:
@@ -700,10 +815,15 @@ async def calculate_score(file: UploadFile = File(...)):
     Upload a Paytm merchant CSV statement to calculate credit score and key SHAP-like factors.
     DPDP Act 2023 Compliant: Read strictly in-memory; DO NOT save the file to disk.
     """
-    if not file.filename.endswith('.csv'):
-        raise HTTPException(status_code=400, detail="Only CSV files are allowed.")
+    filename_lower = file.filename.lower()
+    if not (filename_lower.endswith('.csv') or filename_lower.endswith('.pdf')):
+        raise HTTPException(status_code=400, detail="Only CSV and PDF files are allowed.")
     try:
-        csv_bytes = await file.read()
+        file_bytes = await file.read()
+        if filename_lower.endswith('.pdf'):
+            csv_bytes = parse_pdf_to_csv_bytes(file_bytes)
+        else:
+            csv_bytes = file_bytes
         results = process_scoring(csv_bytes)
         
         # Dispatch to AgentField control plane endpoint asynchronously
